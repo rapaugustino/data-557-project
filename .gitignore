@@ -1,1 +1,5 @@
 venv/
+/__pycache__
+descriptive_analysis.ipynb
+descriptive_analysis.ipynb
+*.ipynb
