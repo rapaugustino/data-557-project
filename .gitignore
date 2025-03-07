@@ -3,3 +3,5 @@ venv/
 descriptive_analysis.ipynb
 descriptive_analysis.ipynb
 *.ipynb
+descriptive_analysis.ipynb
+*.png

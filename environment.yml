@@ -1,0 +1,14 @@
+name: faculty-salary-analysis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pandas
+  - numpy
+  - statsmodels
+  - scikit-learn
+  - scikit-survival
+  - streamlit
+  - plotly

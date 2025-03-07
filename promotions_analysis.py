@@ -2,323 +2,253 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from scipy.stats import chi2_contingency
-import statsmodels.formula.api as smf
 
-# scikit-learn
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import confusion_matrix, roc_curve, auc
-import plotly.figure_factory as ff
+# Two-proportion z-test
+from statsmodels.stats.proportion import proportions_ztest
 
-# scikit-survival
-from sksurv.util import Surv
+# Survival analysis
 from sksurv.nonparametric import kaplan_meier_estimator
 
-# -----------------------------------------
-# 1. Summaries & Basic Tools
-# -----------------------------------------
-def get_max_rank(group):
-    rank_order = {'Assist': 1, 'Assoc': 2, 'Full': 3}
-    group = group[group['rank'].isin(rank_order.keys())].copy()
-    group['rank_numeric'] = group['rank'].map(rank_order)
-    max_rank_numeric = group['rank_numeric'].max()
-    for rank_label, numeric_val in rank_order.items():
-        if numeric_val == max_rank_numeric:
-            return rank_label
+# Sklearn modules
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
 
-def prepare_summary(data, selected_field="All"):
-    summary = (
-        data.groupby('id')
-        .apply(lambda grp: pd.Series({
-            'sex': grp['sex'].iloc[0],
-            'max_rank': get_max_rank(grp)
-        }))
-        .reset_index()
-    )
-    # Keep only those who reached at least Associate rank
-    summary = summary[summary['max_rank'].isin(['Assoc', 'Full'])]
-    summary['promoted'] = np.where(summary['max_rank'] == 'Full', 1, 0)
-
-    if selected_field != "All":
-        valid_ids = data.loc[data['field'] == selected_field, 'id'].unique()
-        summary = summary[summary['id'].isin(valid_ids)]
-
-    return summary
-
-def create_promotion_bar_chart(summary_df):
+def prepare_promotion_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Enhanced bar chart with a specific color palette and layout adjustments.
+    Prepares a summary DataFrame for promotion analysis, focusing on faculty who
+    reached Associate rank at some point, then checks if they were promoted to Full.
+
+    Steps:
+        1. Keep only rows with rank == 'Assoc' or 'Full'.
+        2. Find the earliest Associate year (yr_first_assoc) and earliest Full year (yr_first_full).
+        3. Merge with sex, field, deg, etc. (assumed constant by id).
+        4. Determine if they had admin duties after first becoming Associate (admin_any).
+        5. Create a binary 'promoted' indicator if they reached Full by 1995.
+
+    Returns:
+        summary (pd.DataFrame) with one row per faculty.
     """
-    # We define a custom color palette for aesthetic
-    color_map = {0: "lightslategray", 1: "#636EFA"}  # e.g., a 2-color scheme
-    promo_counts = summary_df.groupby(['sex', 'promoted']).size().reset_index(name='count')
-    
-    # Convert 'promoted' to string for better labeling
-    promo_counts['promoted_str'] = promo_counts['promoted'].replace({0: "Assoc", 1: "Full"})
+    d = df.copy()
+
+    # Filter to Associate or Full records
+    d = d[d['rank'].isin(['Assoc','Full'])]
+
+    # Ensure numeric types
+    d['year'] = pd.to_numeric(d['year'], errors='coerce')
+    d['id'] = pd.to_numeric(d['id'], errors='coerce')
+
+    # Earliest Associate year
+    assoc_only = d[d['rank'] == 'Assoc'].groupby('id', as_index=False)['year'].min()
+    assoc_only.rename(columns={'year': 'yr_first_assoc'}, inplace=True)
+
+    # Earliest Full year
+    full_only = d[d['rank'] == 'Full'].groupby('id', as_index=False)['year'].min()
+    full_only.rename(columns={'year': 'yr_first_full'}, inplace=True)
+
+    # Merge the two
+    summary = pd.merge(assoc_only, full_only, on='id', how='left')
+
+    # Merge with demographics (unique id-level info)
+    demo_cols = ['id','sex','field','deg','yrdeg']
+    demos = df[demo_cols].drop_duplicates('id')
+    summary = pd.merge(summary, demos, on='id', how='left')
+
+    # Merge admin info from the full dataset
+    d_admin = df[['id','year','admin']].copy()
+    d_admin['year'] = pd.to_numeric(d_admin['year'], errors='coerce')
+    summary = pd.merge(summary, d_admin, on='id', how='left')
+
+    # Determine admin status from yr_first_assoc onward
+    summary['relevant_admin'] = np.where((summary['year'] >= summary['yr_first_assoc']) &
+                                         (summary['admin'] == 1), 1, 0)
+    admin_status = summary.groupby('id')['relevant_admin'].max().reset_index()
+    admin_status.rename(columns={'relevant_admin': 'admin_any'}, inplace=True)
+    summary = pd.merge(summary.drop(columns=['year','admin']), admin_status, on='id', how='left')
+
+    # Create promotion indicator: promoted if first Full <= 95
+    summary['promoted'] = np.where((~summary['yr_first_full'].isna()) &
+                                   (summary['yr_first_full'] <= 95), 1, 0)
+
+    return summary.drop_duplicates('id').reset_index(drop=True)
+
+
+def create_promotion_bar_chart(summary: pd.DataFrame):
+    """
+    Creates a Plotly bar chart comparing the count of promoted vs. not promoted by sex.
+    """
+    if summary.empty:
+        return None
+
+    crosstab = summary.groupby(['sex','promoted']).size().reset_index(name='count')
+    crosstab['Promotion Status'] = crosstab['promoted'].map({0: 'Not Promoted', 1: 'Promoted'})
 
     fig = px.bar(
-        promo_counts,
+        crosstab,
         x='sex',
         y='count',
-        color='promoted_str',
+        color='Promotion Status',
         barmode='group',
-        labels={'promoted_str': 'Promotion Status', 'count': 'Count of Faculty'},
-        title="Promotion Outcome by Sex",
-        color_discrete_map={"Assoc": color_map[0], "Full": color_map[1]}
+        title='Promotion Counts by Sex'
     )
-    fig.update_layout(
-        xaxis_title="Sex",
-        yaxis_title="Number of Faculty",
-        legend_title="Rank",
-    )
+    fig.update_layout(xaxis_title="Sex", yaxis_title="Count of Faculty")
     return fig
 
 
-def perform_chi_square(summary_df):
+def welch_two_proportions_test(summary: pd.DataFrame):
     """
-    Return chi2, p, dof, expected, plus a short interpretation
+    Performs a two-proportion z-test to compare promotion rates for men vs. women.
+    Returns a dictionary with test statistics and an interpretation.
     """
-    if summary_df.empty:
-        return None, None, None, None, "No data to analyze"
-    contingency_table = pd.crosstab(summary_df['sex'], summary_df['promoted'])
-    chi2, p, dof, expected = chi2_contingency(contingency_table)
-    # Basic interpretation
-    if p < 0.05:
-        interpretation = ("A significant chi-square (p<0.05) indicates an association "
-                          "between sex and promotion outcome.")
+    crosstab = pd.crosstab(summary['sex'], summary['promoted'])
+    if not {'M', 'F'}.issubset(crosstab.index):
+        return None
+
+    men_promoted = crosstab.loc['M', 1]
+    men_total = crosstab.loc['M'].sum()
+    women_promoted = crosstab.loc['F', 1]
+    women_total = crosstab.loc['F'].sum()
+
+    counts = np.array([men_promoted, women_promoted])
+    nobs = np.array([men_total, women_total])
+    z_stat, p_val = proportions_ztest(counts, nobs)
+
+    p_men = men_promoted / men_total
+    p_women = women_promoted / women_total
+    diff = p_men - p_women
+    se_diff = np.sqrt(p_men*(1-p_men)/men_total + p_women*(1-p_women)/women_total)
+    z_critical = 1.96
+    ci_lower = diff - z_critical * se_diff
+    ci_upper = diff + z_critical * se_diff
+
+    alpha = 0.05
+    if p_val < alpha:
+        pval_interpretation = f"p-value = {p_val:.4f} < 0.05. We reject H₀; there's evidence of a difference."
     else:
-        interpretation = ("No statistically significant association was found (p>=0.05).")
-    return chi2, p, dof, expected, interpretation
+        pval_interpretation = f"p-value = {p_val:.4f} ≥ 0.05. We fail to reject H₀; no strong evidence of a difference."
+
+    return {
+        'z_stat': z_stat,
+        'p_val': p_val,
+        'p_val_interpretation': pval_interpretation,
+        'ci_lower': ci_lower,
+        'ci_upper': ci_upper,
+        'diff': diff,
+        'proportion_men': p_men,
+        'proportion_women': p_women
+    }
 
 
-# -----------------------------------------
-# 2. Logistic Regression (StatsModels)
-# -----------------------------------------
-def perform_logistic_regression(summary_df):
+def create_survival_analysis(summary: pd.DataFrame):
     """
-    Fit a logistic regression model (promoted ~ sex) using statsmodels.
-    Return the fitted model, exponentiated odds ratios (OR), and an interpretation text.
+    Creates Kaplan-Meier survival curves (probability of remaining Associate over time)
+    by sex.
     """
-    summary_df = summary_df.copy()
-    summary_df['sex_cat'] = summary_df['sex'].astype('category')
-
-    if summary_df['sex_cat'].nunique() < 2:
-        # If the data is unbalanced or ends up with 1 category, skip
-        return None, None, "Insufficient variation in 'sex' for logistic regression."
-
-    logit_model = smf.logit("promoted ~ sex_cat", data=summary_df).fit(disp=False)
-    params = logit_model.params
-    conf_int = logit_model.conf_int()
-    conf_int['OR'] = params
-    conf_int.columns = ['2.5%', '97.5%', 'OR']
-    odds_ratios = np.exp(conf_int)
-
-    # Basic interpretation logic
-    # If sex_cat[T.F] is <1 and p<0.05 => lower odds for female, etc.
-    pvals = logit_model.pvalues
-    sex_coef = params.get('sex_cat[T.F]', None)
-    sex_p = pvals.get('sex_cat[T.F]', None)
-    interpretation = []
-    if sex_coef is not None and sex_p is not None:
-        if sex_p < 0.05:
-            if sex_coef < 0:
-                interpretation.append("Females have significantly lower odds of promotion (p<0.05).")
-            else:
-                interpretation.append("Females have significantly higher odds of promotion (p<0.05).")
-        else:
-            interpretation.append("No statistically significant difference by sex (p>=0.05).")
-    else:
-        interpretation.append("Sex coefficient not found in the model? Possibly no variation.")
-    interpretation_text = " ".join(interpretation)
-
-    return logit_model, odds_ratios, interpretation_text
-
-
-# -----------------------------------------
-# 3. Kaplan-Meier Analysis (scikit-survival)
-# -----------------------------------------
-def create_survival_analysis(data, summary_df):
-    """
-    scikit-survival-based KM estimate. 
-    If data is unbalanced (e.g. only 1 female in this field), it will still plot, but keep interpretation in mind.
-    """
-    # Filter to ranks in [Assoc, Full]
-    assoc_full = data[data['rank'].isin(['Assoc','Full'])].copy()
-    assoc_full['year'] = pd.to_numeric(assoc_full['year'], errors='coerce')
-
-    # earliest Associate
-    first_assoc = assoc_full[assoc_full['rank'] == 'Assoc'].groupby('id')['year'].min().rename('year_assoc')
-    # earliest Full
-    first_full = assoc_full[assoc_full['rank'] == 'Full'].groupby('id')['year'].min().rename('year_full')
-
-    # combine
-    summary = pd.DataFrame({'id': assoc_full['id'].unique()}).merge(first_assoc, on='id', how='left')
-    summary = summary.merge(first_full, on='id', how='left')
-
-    # exclude those with no Associate data
-    summary = summary[~summary['year_assoc'].isna()].copy()
     if summary.empty:
-        return go.Figure().add_annotation(text="No data for survival analysis", showarrow=False)
+        return None
 
-    # Merge 'sex' from summary_df
-    # We must ensure the indices match
-    summary = summary.merge(
-        summary_df[['id','sex','promoted']], on='id', how='inner'
+    km_data = summary.copy()
+    km_data['yr_first_assoc'] = pd.to_numeric(km_data['yr_first_assoc'], errors='coerce')
+    km_data['yr_first_full'] = pd.to_numeric(km_data['yr_first_full'], errors='coerce')
+
+    km_data['time'] = np.where(
+        km_data['promoted'] == 1,
+        km_data['yr_first_full'] - km_data['yr_first_assoc'],
+        95 - km_data['yr_first_assoc']
     )
-
-    summary['event'] = np.where(summary['year_full'].notna(), 1, 0)
-    summary['time'] = np.where(summary['year_full'].notna(),
-                               summary['year_full'] - summary['year_assoc'],
-                               1995 - summary['year_assoc'])
-    summary = summary[summary['time']>0].copy()
-    if summary.empty:
-        return go.Figure().add_annotation(text="No valid time intervals after filtering", showarrow=False)
-
-    # Build scikit-survival Surv objects
-    times = summary['time'].values
-    events = summary['event'].values.astype(bool)
+    km_data['event'] = km_data['promoted']
+    km_data['Female'] = np.where(km_data['sex'] == 'F', 1, 0)
+    km_data = km_data[km_data['time'] >= 0]
+    if len(km_data) < 2:
+        return None
 
     fig = go.Figure()
-    # color palette for sexes
-    palette = {"M": "#EF553B", "F": "#00CC96", "Other": "lightslategray"}
-
-    sexes = summary['sex'].unique()
-    for s in sexes:
-        mask = summary['sex'] == s
-        if mask.sum() < 2:
-            continue  # skip if only 1 observation
-        T, P = kaplan_meier_estimator(events[mask], times[mask])
-        color_val = palette.get(s, "lightslategray")
-        fig.add_trace(
-            go.Scatter(
-                x=T, y=P,
-                mode='lines',
-                name=f"Sex={s}",
-                line=dict(color=color_val, width=3)
-            )
+    for sex_label, sex_data in km_data.groupby('Female'):
+        if len(sex_data) < 2:
+            continue
+        survival_array = np.array(
+            [(bool(e), float(t)) for e, t in zip(sex_data['event'], sex_data['time'])],
+            dtype=[('event', '?'), ('time', '<f8')]
         )
-
+        times, survival_prob = kaplan_meier_estimator(survival_array['event'], survival_array['time'])
+        group_name = 'Female' if sex_label == 1 else 'Male'
+        fig.add_trace(go.Scatter(
+            x=times,
+            y=survival_prob,
+            mode='lines',
+            name=group_name
+        ))
     fig.update_layout(
-        title="Kaplan-Meier: Time to Promotion (Associate -> Full)",
-        xaxis_title="Years from First Associate Rank",
-        yaxis_title="Probability of Remaining Associate"
+        title="Kaplan-Meier: Probability of Remaining Associate Over Time",
+        xaxis_title="Years Since First Associate Rank",
+        yaxis_title="Survival Probability (Still Associate)"
     )
     return fig
 
 
-# -----------------------------------------
-# 4. Advanced Sklearn Multi-Feature
-# -----------------------------------------
-def prepare_data_for_sklearn(data):
-    summary = data.groupby('id').apply(
-        lambda grp: pd.Series({
-            'sex': grp['sex'].iloc[0],
-            'field': grp['field'].iloc[0],
-            'deg': grp['deg'].iloc[0],
-            'admin_any': (grp['admin'] == 1).any(),
-            'yrdeg_min': grp['yrdeg'].min(),
-            'max_rank': get_max_rank(grp)
-        })
-    ).reset_index()
+def prepare_data_for_modeling(summary: pd.DataFrame):
+    """
+    Prepares X and y for an advanced logistic regression model.
+    Returns X, y, and an updated summary DataFrame.
+    """
+    data = summary.copy()
+    data['sex_numeric'] = np.where(data['sex'] == 'F', 1, 0)
+    data.rename(columns={'deg': 'deg_type'}, inplace=True)
+    data['admin_any'] = data['admin_any'].fillna(0)
+    data['yrdeg_min'] = data['yr_first_assoc'] - data['yrdeg']
+    feature_cols = ['sex_numeric', 'field', 'deg_type', 'admin_any', 'yrdeg_min']
+    y = data['promoted'].astype(int)
+    X = data[feature_cols].copy()
+    return X, y, data
 
-    # Keep only Associate or Full
-    summary = summary[summary['max_rank'].isin(['Assoc','Full'])]
-    summary['promoted'] = np.where(summary['max_rank']=='Full', 1, 0)
 
-    X = summary[['sex','field','deg','admin_any','yrdeg_min']]
-    y = summary['promoted'].values
-    return X, y, summary
-
-def build_and_run_sklearn_model(X, y, features_to_include):
-    from sklearn.pipeline import Pipeline
-    from sklearn.compose import ColumnTransformer
-
-    X_model = X[features_to_include].copy()
-    cat_cols = [c for c in X_model.columns if X_model[c].dtype == 'object' or c in ['sex','field','deg']]
-    num_cols = [c for c in X_model.columns if c not in cat_cols]
-
+def build_and_run_sklearn_model(X: pd.DataFrame, y: pd.Series, selected_features: list):
+    """
+    Builds and fits a scikit-learn logistic regression pipeline with the selected features.
+    Returns the pipeline, predictions, and predicted probabilities.
+    """
+    X_model = X[selected_features].copy()
+    cat_cols = [col for col in selected_features if X_model[col].dtype == object]
+    num_cols = [col for col in selected_features if X_model[col].dtype != object]
     transformers = []
     if cat_cols:
         transformers.append(('cat', OneHotEncoder(drop='first'), cat_cols))
     if num_cols:
         transformers.append(('num', StandardScaler(), num_cols))
-
-    preprocessor = ColumnTransformer(transformers=transformers, remainder='drop')
-
+    preprocessor = ColumnTransformer(transformers=transformers, remainder='passthrough')
     pipe = Pipeline([
-        ('preprocess', preprocessor),
-        ('clf', LogisticRegression(solver='lbfgs', max_iter=1000))
+        ('preprocessor', preprocessor),
+        ('logreg', LogisticRegression(solver='lbfgs'))
     ])
-
     pipe.fit(X_model, y)
     preds = pipe.predict(X_model)
-    probs = pipe.predict_proba(X_model)[:,1]
+    probs = pipe.predict_proba(X_model)[:, 1]
     return pipe, preds, probs
 
-def plot_feature_importances_sklearn(pipe, X, features_to_include):
-    cat_cols = [c for c in features_to_include if X[c].dtype == 'object' or c in ['sex','field','deg']]
-    num_cols = [c for c in features_to_include if c not in cat_cols]
-    preprocessor = pipe.named_steps['preprocess']
-    clf = pipe.named_steps['clf']
 
-    cat_feature_names = []
-    if cat_cols:
-        ohe = preprocessor.named_transformers_['cat']
-        cat_feature_names = list(ohe.get_feature_names_out(cat_cols))
-    numeric_feature_names = num_cols
-    all_feature_names = cat_feature_names + numeric_feature_names
-
-    coefs = clf.coef_[0]
-    odds_ratios = np.exp(coefs)
-
-    df_imp = pd.DataFrame({
-        'Feature': all_feature_names,
-        'OddsRatio': odds_ratios
-    }).sort_values('OddsRatio', ascending=False)
-
-    # custom color scale
+def plot_feature_importances_sklearn(pipe: Pipeline, X: pd.DataFrame, selected_features: list):
+    """
+    Plots the logistic regression coefficients (log-odds) as a bar chart using Plotly.
+    """
+    logreg = pipe.named_steps['logreg']
+    preprocessor = pipe.named_steps['preprocessor']
+    feature_names = preprocessor.get_feature_names_out(selected_features)
+    coefs = logreg.coef_.flatten()
+    coef_df = pd.DataFrame({
+        'feature': feature_names,
+        'coef': coefs
+    }).sort_values('coef', ascending=False)
     fig = px.bar(
-        df_imp,
-        x='OddsRatio',
-        y='Feature',
+        coef_df,
+        x='coef',
+        y='feature',
         orientation='h',
-        title="Feature Importance (Odds Ratios)",
-        color='OddsRatio',
-        color_continuous_scale=px.colors.sequential.Plasma
-    )
-    fig.update_layout(coloraxis_showscale=False)
-    return fig
-
-def plot_confusion_matrix_sklearn(y_true, y_pred):
-    cm = confusion_matrix(y_true, y_pred)
-    z_text = [[str(y) for y in x] for x in cm]
-
-    fig = ff.create_annotated_heatmap(
-        cm,
-        x=["Pred:0", "Pred:1"],
-        y=["Actual:0", "Actual:1"],
-        annotation_text=z_text,
-        colorscale='Blues'
-    )
-    fig.update_layout(title="Confusion Matrix")
-    return fig
-
-def plot_roc_curve_sklearn(y_true, probs):
-    fpr, tpr, thresholds = roc_curve(y_true, probs)
-    roc_auc = auc(fpr, tpr)
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines', name='ROC'))
-    fig.add_shape(
-        type='line', line=dict(dash='dash'),
-        x0=0, x1=1, y0=0, y1=1
+        title="Feature Coefficients (Log-Odds Scale)"
     )
     fig.update_layout(
-        title=f"ROC Curve (AUC = {roc_auc:.3f})",
-        xaxis_title="False Positive Rate",
-        yaxis_title="True Positive Rate"
+        xaxis_title="Coefficient (Log-Odds)",
+        yaxis_title="Feature",
+        yaxis=dict(autorange="reversed")
     )
     return fig
