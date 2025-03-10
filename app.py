@@ -1,6 +1,13 @@
 import streamlit as st
 import pandas as pd
-import promotions_analysis as pa  # We'll assume you have the relevant logistic regression code in promotions_analysis.py
+import promotions_analysis as pa
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import plotly.express as px
+import plotly.graph_objects as go
+import promotions_analysis as pa  
+
 
 # --------------------------------------------------------------------
 # Streamlit Page Configuration
@@ -60,6 +67,26 @@ data = load_data()
 # --------------------------------------------------------------------
 if selected_tab == "Introduction":
     st.header("Introduction and Background")
+
+    st.markdown(
+        """
+    **Project Overview:**  
+    This project analyzes faculty salary data from a US university in 1995 to investigate 
+    potential differences between male and female faculty, focusing on multiple questions.
+
+    **Background & Assumptions:**  
+    - Faculty data are assumed independent, though real-world confounders (e.g., teaching evaluations, research productivity) are not fully captured.
+    - We focus on group-level differences in promotions.
+    - We interpret differences in promotion rates or time-to-promotion as potential sex bias, though causation cannot be established.
+
+    **Dataset Description:**  
+    - The dataset includes:  
+      `case, id, sex, deg, yrdeg, field, startyr, year, rank, admin, salary`
+    - Each row corresponds to a faculty member in a given year (1976-1995).
+    """)
+    
+elif selected_tab == "Question 1: 1995 Sex Bias":
+=======
     st.markdown("""
         **Project Overview:**  
         In this team project, we analyze faculty salary data from a U.S. university to explore whether there are differences in average salary and career outcomes between men and women. The overarching goal is to determine whether sex bias exists and to describe the magnitude and nature of its effect.
@@ -99,8 +126,915 @@ if selected_tab == "Introduction":
         """)
 
 elif selected_tab == "1995 Sex Bias":
+
     st.header("Question 1: Does Sex Bias Exist at the University in 1995?")
-    st.warning("Placeholder: Implement the 1995 salary analysis here.")
+
+    # Introduction to the analysis
+    st.markdown(
+        """
+    ### Introduction
+    
+    In this analysis, we investigate whether there is evidence of sex-based salary discrimination 
+    at the university in 1995. While raw differences in salary between men and women often exist, 
+    these differences could be due to legitimate factors like field, rank, experience, or 
+    administrative duties. 
+    
+    Our approach is to first examine the raw (unadjusted) salary differences, then use statistical 
+    methods to account for legitimate factors that affect salary. Any remaining difference 
+    that can be attributed to sex may suggest potential bias.
+    
+    We'll use two complementary approaches:
+    1. **Linear Regression**: To estimate the percentage difference in salary attributable to sex after controlling for other factors
+    2. **Logistic Regression**: To determine if women are more likely to be "underpaid" relative to what would be expected based on their qualifications
+    """
+    )
+
+    # --- Section A: Data Preparation ---
+    st.subheader("A) Data Preparation")
+
+    st.markdown(
+        """
+    First, we'll prepare our dataset by:
+    - Filtering to include only faculty employed in 1995
+    - Creating variables for years of experience and time since degree
+    - Converting categorical variables (rank, field, etc.) to numerical format for analysis
+    - Log-transforming salary to analyze percentage differences rather than absolute dollar amounts
+    """
+    )
+
+    # Filter data to just 1995
+    data_1995 = data[data["year"] == 95].copy()
+
+    # Create derived variables
+    data_1995["years_experience"] = data_1995["year"] - data_1995["startyr"]
+    data_1995["years_since_degree"] = data_1995["year"] - data_1995["yrdeg"]
+    data_1995["log_salary"] = np.log(data_1995["salary"])
+
+    # Create binary indicators
+    data_1995["female"] = (data_1995["sex"] == "F").astype(int)
+    data_1995["is_assoc"] = (data_1995["rank"] == "Assoc").astype(int)
+    data_1995["is_full"] = (data_1995["rank"] == "Full").astype(int)
+    data_1995["is_arts"] = (data_1995["field"] == "Arts").astype(int)
+    data_1995["is_prof"] = (data_1995["field"] == "Prof").astype(int)
+    data_1995["is_phd"] = (data_1995["deg"] == "PhD").astype(int)
+    data_1995["is_prof_deg"] = (data_1995["deg"] == "Prof").astype(int)
+
+    # Add field filter with explanation
+    st.markdown(
+        """
+    #### Faculty Field Filter
+    
+    Salary patterns may differ substantially by academic field. Use the filter below to focus
+    on a specific field or view data across all fields.
+    """
+    )
+
+    field_list = ["All"] + sorted(data_1995["field"].dropna().unique().tolist())
+    selected_field = st.selectbox("Field Filter", field_list, index=0)
+
+    if selected_field != "All":
+        filtered_data = data_1995[data_1995["field"] == selected_field].copy()
+        st.info(
+            f"Showing analysis for the {selected_field} field only ({len(filtered_data)} faculty members)."
+        )
+    else:
+        filtered_data = data_1995.copy()
+        st.info(
+            f"Showing analysis across all fields ({len(filtered_data)} faculty members)."
+        )
+
+    # --- Section B: Descriptive Statistics ---
+    st.subheader("B) Examining Raw Salary Differences")
+
+    st.markdown(
+        """
+    Before conducting advanced statistical analyses, it's important to understand the raw data.
+    Here we examine the unadjusted salary differences between male and female faculty.
+    
+    These raw differences don't account for legitimate factors that affect salary (rank, field, experience),
+    but they provide a starting point for our investigation.
+    """
+    )
+
+    # Summary statistics table
+    summary_stats = (
+        filtered_data.groupby("sex")["salary"]
+        .agg(["count", "mean", "median", "std"])
+        .reset_index()
+    )
+    summary_stats.columns = ["Sex", "Count", "Mean Salary", "Median Salary", "Std Dev"]
+    for col in ["Mean Salary", "Median Salary", "Std Dev"]:
+        summary_stats[col] = summary_stats[col].round(2)
+
+    st.write("**Monthly Salary Statistics by Sex (1995)**")
+    st.dataframe(summary_stats)
+
+    # Calculate unadjusted salary gap
+    if "M" in summary_stats["Sex"].values and "F" in summary_stats["Sex"].values:
+        male_mean = summary_stats.loc[
+            summary_stats["Sex"] == "M", "Mean Salary"
+        ].values[0]
+        female_mean = summary_stats.loc[
+            summary_stats["Sex"] == "F", "Mean Salary"
+        ].values[0]
+        gap = male_mean - female_mean
+        gap_percent = (gap / male_mean) * 100
+
+        st.write(
+            f"**Unadjusted salary gap (M-F):** ${gap:.2f} per month ({gap_percent:.1f}% of male salary)"
+        )
+
+        if gap > 0:
+            st.markdown(
+                """
+            ⚠️ **Note:** This raw difference doesn't necessarily indicate discrimination. 
+            It could be explained by differences in field, rank, experience, or other factors.
+            Our subsequent analysis will account for these factors.
+            """
+            )
+    else:
+        st.write(
+            "Cannot calculate salary gap: data for both men and women is required."
+        )
+
+    # Summary by rank and sex
+    st.markdown(
+        """
+    #### Salary by Rank and Sex
+    
+    Rank is a major determinant of faculty salary. Below we break down the data by both rank and sex
+    to see if patterns differ across academic ranks.
+    """
+    )
+
+    rank_sex_summary = (
+        filtered_data.groupby(["rank", "sex"])["salary"]
+        .agg(["count", "mean"])
+        .reset_index()
+    )
+    rank_sex_pivot = rank_sex_summary.pivot(
+        index="rank", columns="sex", values=["count", "mean"]
+    )
+    st.dataframe(rank_sex_pivot)
+
+    # --- Section C: Visualizations ---
+    st.subheader("C) Visualizing Salary Patterns")
+
+    st.markdown(
+        """
+    Visualizations help us identify patterns in the data before formal statistical testing.
+    The charts below explore different aspects of potential salary disparities.
+    """
+    )
+
+    # Create two columns for side-by-side charts
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Box plot of salary by sex and rank
+        st.markdown("**Salary Distribution by Rank and Sex**")
+        st.markdown(
+            """
+        This box plot shows salary distributions for men and women across different ranks.
+        Look for consistent patterns where one group's boxes are higher than the other's within the same rank.
+        """
+        )
+
+        fig1 = px.box(
+            filtered_data,
+            x="rank",
+            y="salary",
+            color="sex",
+            labels={"rank": "Rank", "salary": "Monthly Salary", "sex": "Sex"},
+        )
+        st.plotly_chart(fig1, use_container_width=True)
+
+        st.markdown(
+            """
+        **How to interpret:** If boxes for one sex are consistently higher across all ranks,
+        it might suggest a systematic pattern. However, overlapping boxes suggest smaller
+        or inconsistent differences.
+        """
+        )
+
+    with col2:
+        # Scatter plot of salary vs experience colored by sex
+        st.markdown("**Salary vs. Experience by Sex**")
+        st.markdown(
+            """
+        This scatter plot shows how salary relates to years of experience for men and women.
+        Trend lines help identify if the "return on experience" differs by sex.
+        """
+        )
+
+        fig2 = px.scatter(
+            filtered_data,
+            x="years_experience",
+            y="salary",
+            color="sex",
+            trendline="ols",
+            opacity=0.7,
+            labels={
+                "years_experience": "Years of Experience",
+                "salary": "Monthly Salary",
+                "sex": "Sex",
+            },
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+        st.markdown(
+            """
+        **How to interpret:** Different slopes in the trend lines suggest that men and women
+        might receive different salary increases for additional years of experience.
+        """
+        )
+
+    # Second row of visualizations
+    col3, col4 = st.columns(2)
+
+    with col3:
+        # Bar chart of salary gap by field
+        st.markdown("**Salary Comparison by Field**")
+
+        if selected_field == "All":
+            st.markdown(
+                """
+            This chart shows how the salary gap between men and women varies across different fields.
+            Some fields may show larger disparities than others.
+            """
+            )
+
+            if (
+                "M" in filtered_data["sex"].values
+                and "F" in filtered_data["sex"].values
+            ):
+                field_sex_gap = (
+                    filtered_data.groupby(["field", "sex"])["salary"]
+                    .mean()
+                    .reset_index()
+                )
+                field_sex_pivot = field_sex_gap.pivot(
+                    index="field", columns="sex", values="salary"
+                ).reset_index()
+                if "M" in field_sex_pivot.columns and "F" in field_sex_pivot.columns:
+                    field_sex_pivot["gap"] = field_sex_pivot["M"] - field_sex_pivot["F"]
+                    field_sex_pivot["gap_percent"] = (
+                        field_sex_pivot["gap"] / field_sex_pivot["M"]
+                    ) * 100
+
+                    fig3 = px.bar(
+                        field_sex_pivot,
+                        x="field",
+                        y="gap_percent",
+                        labels={"field": "Field", "gap_percent": "Gap (%)"},
+                    )
+                    st.plotly_chart(fig3, use_container_width=True)
+
+                    st.markdown(
+                        """
+                    **How to interpret:** Larger positive values indicate fields where men earn more than women on average.
+                    Remember this still doesn't control for rank or experience within each field.
+                    """
+                    )
+                else:
+                    st.write("Insufficient data to create salary gap by field chart.")
+            else:
+                st.write("Insufficient data to create salary gap by field chart.")
+        else:
+            # For a single field, show average salary by sex
+            st.markdown(
+                f"""
+            This chart shows the average salary by sex within the {selected_field} field.
+            """
+            )
+
+            if (
+                "M" in filtered_data["sex"].values
+                and "F" in filtered_data["sex"].values
+            ):
+                sex_avg = filtered_data.groupby("sex")["salary"].mean().reset_index()
+                fig3 = px.bar(
+                    sex_avg,
+                    x="sex",
+                    y="salary",
+                    color="sex",
+                    labels={"sex": "Sex", "salary": "Average Monthly Salary"},
+                    title=f"Average Salary by Sex in {selected_field} Field",
+                )
+                st.plotly_chart(fig3, use_container_width=True)
+
+                # Calculate gap
+                male_avg = sex_avg.loc[sex_avg["sex"] == "M", "salary"].values[0]
+                female_avg = sex_avg.loc[sex_avg["sex"] == "F", "salary"].values[0]
+                gap = male_avg - female_avg
+                gap_percent = (gap / male_avg) * 100
+
+                st.markdown(
+                    f"""
+                **Raw gap:** ${gap:.2f} per month ({gap_percent:.1f}% of male salary)
+                
+                **Note:** This raw difference doesn't account for legitimate factors like rank, experience, etc.
+                """
+                )
+            else:
+                st.write(
+                    "Insufficient data - need both male and female faculty in this field."
+                )
+
+    with col4:
+        # Density plot of log salary by sex
+        st.markdown("**Log Salary Distribution by Sex**")
+        st.markdown(
+            """
+        This histogram shows the distribution of log-transformed salary by sex.
+        Log transformation helps visualize percentage differences rather than absolute dollars.
+        """
+        )
+
+        fig4 = px.histogram(
+            filtered_data,
+            x="log_salary",
+            color="sex",
+            marginal="rug",
+            opacity=0.7,
+            barmode="overlay",
+            labels={"log_salary": "Log Monthly Salary", "sex": "Sex"},
+        )
+        st.plotly_chart(fig4, use_container_width=True)
+
+        st.markdown(
+            """
+        **How to interpret:** Shifts between the distributions indicate potential differences.
+        If the female distribution is shifted left, it suggests lower salaries on average.
+        """
+        )
+
+    # --- Section D: Multiple Linear Regression ---
+    st.subheader("D) Multiple Linear Regression Analysis")
+
+    st.markdown(
+        """
+    ### Controlling for Legitimate Factors
+    
+    Raw salary differences don't tell the full story. To identify potential bias, we need to account for 
+    legitimate factors that affect salary. Using multiple linear regression, we can estimate the effect of
+    sex while controlling for rank, field, experience, degree, and administrative duties.
+    
+    **Why log-transform salary?**
+    - Makes the model estimate percentage differences rather than absolute dollar amounts
+    - Better aligns with how salaries typically work (effects tend to be multiplicative)
+    - Reduces the impact of outliers on model estimates
+    
+    **Variables in our model:**
+    - **Outcome**: Log-transformed monthly salary
+    - **Predictor of Interest**: Sex (female=1, male=0)
+    - **Control variables**: Rank, field, years of experience, years since degree, highest degree, administrative duties
+    """
+    )
+
+    # Full model including sex variable
+    formula = "log_salary ~ female + is_assoc + is_full + is_arts + is_prof + years_experience + years_since_degree + is_phd + is_prof_deg + admin"
+    model = smf.ols(formula=formula, data=filtered_data).fit()
+
+    # Display regression results
+    results_df = pd.DataFrame(
+        {
+            "Variable": model.params.index,
+            "Coefficient": model.params.values,
+            "Std Error": model.bse.values,
+            "p-value": model.pvalues.values,
+            "95% CI Lower": model.conf_int()[0],
+            "95% CI Upper": model.conf_int()[1],
+        }
+    )
+
+    # Format numeric columns
+    for col in ["Coefficient", "Std Error", "p-value", "95% CI Lower", "95% CI Upper"]:
+        results_df[col] = results_df[col].round(4)
+
+    # Add significance indicator
+    results_df["Significance"] = results_df["p-value"].apply(
+        lambda p: (
+            "***" if p < 0.001 else ("**" if p < 0.01 else ("*" if p < 0.05 else "ns"))
+        )
+    )
+
+    st.markdown("#### Full Model (Including Sex) Results")
+    st.markdown(
+        """
+    The table below shows the effect of each variable on log salary. Our primary interest is the coefficient
+    for 'female', which represents the estimated percentage difference in salary between women and men
+    after controlling for other factors.
+    """
+    )
+
+    st.dataframe(results_df)
+
+    st.markdown(
+        """
+    **How to interpret:**
+    - **Coefficient**: The estimated effect on log salary (approximate percentage effect)
+    - **p-value**: The probability of observing this effect by chance if no true effect exists
+    - **Significance**: * p<0.05, ** p<0.01, *** p<0.001, ns=not significant
+    """
+    )
+
+    # Residual plot
+    filtered_data["predicted_log_salary_full"] = model.predict(filtered_data)
+    filtered_data["residuals_full"] = (
+        filtered_data["log_salary"] - filtered_data["predicted_log_salary_full"]
+    )
+
+    fig_residual = px.scatter(
+        filtered_data,
+        x="predicted_log_salary_full",
+        y="residuals_full",
+        color="sex",
+        opacity=0.7,
+        title="Residuals from Full Model (Including Sex)",
+        labels={
+            "predicted_log_salary_full": "Predicted Log Salary",
+            "residuals_full": "Residuals",
+            "sex": "Sex",
+        },
+    )
+    fig_residual.add_hline(y=0, line_dash="dash", line_color="black")
+    st.plotly_chart(fig_residual, use_container_width=True)
+
+    # Interpret the female coefficient
+    female_coef = model.params["female"]
+    female_pval = model.pvalues["female"]
+    percent_effect = (np.exp(female_coef) - 1) * 100
+    female_ci_lower = model.conf_int().loc["female"][0]
+    female_ci_upper = model.conf_int().loc["female"][1]
+    percent_ci_lower = (np.exp(female_ci_lower) - 1) * 100
+    percent_ci_upper = (np.exp(female_ci_upper) - 1) * 100
+
+    st.markdown("#### Key Finding: Adjusted Salary Gap")
+
+    if female_pval < 0.05:
+        if percent_effect < 0:
+            effect_interpretation = f"After controlling for rank, field, experience, degree, and administrative duties, women earn approximately {abs(percent_effect):.1f}% less than similarly qualified men (95% CI: {percent_ci_lower:.1f}% to {percent_ci_upper:.1f}%, p={female_pval:.4f})."
+            st.error(effect_interpretation)
+            st.markdown(
+                """
+            **This statistically significant difference suggests potential sex bias in faculty salaries.**
+            
+            Since we've controlled for legitimate factors affecting salary, the remaining difference 
+            attributable to sex raises concerns about systematic bias.
+            """
+            )
+        else:
+            effect_interpretation = f"After controlling for rank, field, experience, degree, and administrative duties, women earn approximately {abs(percent_effect):.1f}% more than similarly qualified men (95% CI: {percent_ci_lower:.1f}% to {percent_ci_upper:.1f}%, p={female_pval:.4f})."
+            st.success(effect_interpretation)
+    else:
+        effect_interpretation = f"After controlling for rank, field, experience, degree, and administrative duties, there is no statistically significant difference in salary between men and women (p={female_pval:.4f})."
+        st.info(effect_interpretation)
+        st.markdown(
+            """
+        **The absence of a significant difference suggests that the raw salary gap may be explained by legitimate factors.**
+        
+        This doesn't rule out other forms of bias (such as in hiring or promotion), but suggests that 
+        men and women with similar qualifications receive similar compensation.
+        """
+        )
+
+    # --- NEW SECTION: Model Without Sex ---
+    st.subheader("E) Model Without Sex Variable")
+
+    st.markdown(
+        """
+    ### Creating a "Fair Salary" Model
+    
+    To identify potential bias, we can also build a model that predicts salary based only on legitimate factors (excluding sex).
+    This "fair salary" model tells us what someone with certain qualifications would be expected to earn regardless of their sex.
+    
+    By comparing actual salaries to these predicted "fair salaries," we can identify individuals who might be underpaid
+    relative to their qualifications, then test if being female increases the likelihood of being underpaid.
+    """
+    )
+
+    # Create model without sex
+    formula_nosex = "log_salary ~ is_assoc + is_full + is_arts + is_prof + years_experience + years_since_degree + is_phd + is_prof_deg + admin"
+    model_nosex = smf.ols(formula=formula_nosex, data=filtered_data).fit()
+
+    # Display regression results for model without sex
+    results_df_nosex = pd.DataFrame(
+        {
+            "Variable": model_nosex.params.index,
+            "Coefficient": model_nosex.params.values,
+            "Std Error": model_nosex.bse.values,
+            "p-value": model_nosex.pvalues.values,
+            "95% CI Lower": model_nosex.conf_int()[0],
+            "95% CI Upper": model_nosex.conf_int()[1],
+        }
+    )
+
+    # Format numeric columns
+    for col in ["Coefficient", "Std Error", "p-value", "95% CI Lower", "95% CI Upper"]:
+        results_df_nosex[col] = results_df_nosex[col].round(4)
+
+    # Add significance indicator
+    results_df_nosex["Significance"] = results_df_nosex["p-value"].apply(
+        lambda p: (
+            "***" if p < 0.001 else ("**" if p < 0.01 else ("*" if p < 0.05 else "ns"))
+        )
+    )
+
+    st.markdown("#### Fair Salary Model (Excluding Sex) Results")
+    st.dataframe(results_df_nosex)
+
+    # Compare model performance
+    st.markdown("#### Comparing Models With and Without Sex Variable")
+
+    model_comparison = pd.DataFrame(
+        {
+            "Model": ["Including Sex", "Excluding Sex"],
+            "R-squared": [model.rsquared, model_nosex.rsquared],
+            "Adj. R-squared": [model.rsquared_adj, model_nosex.rsquared_adj],
+            "AIC": [model.aic, model_nosex.aic],
+            "BIC": [model.bic, model_nosex.bic],
+            "Log-Likelihood": [model.llf, model_nosex.llf],
+        }
+    )
+
+    # Format numeric columns
+    for col in ["R-squared", "Adj. R-squared", "AIC", "BIC", "Log-Likelihood"]:
+        model_comparison[col] = model_comparison[col].round(4)
+
+    st.dataframe(model_comparison)
+
+    st.markdown(
+        """
+    **How to interpret:**
+    - If the model with sex has notably better fit metrics (higher R-squared, lower AIC/BIC), it suggests sex is an important predictor of salary
+    - Small differences suggest sex has minimal additional predictive power after accounting for other factors
+    """
+    )
+
+    # Calculate "expected" salaries and differences
+    filtered_data["expected_log_salary"] = model_nosex.predict(filtered_data)
+    filtered_data["salary_residual"] = (
+        filtered_data["log_salary"] - filtered_data["expected_log_salary"]
+    )
+    filtered_data["percent_diff"] = (np.exp(filtered_data["salary_residual"]) - 1) * 100
+
+    # Create visualization comparing predictions
+    st.markdown("#### Comparison of Actual vs. Expected Salary by Sex")
+
+    # Create scatter plot with two trend lines
+    fig_compare = px.scatter(
+        filtered_data,
+        x="years_experience",
+        y="salary",
+        color="sex",
+        opacity=0.5,
+        labels={
+            "years_experience": "Years of Experience",
+            "salary": "Monthly Salary",
+            "sex": "Sex",
+        },
+    )
+
+    # Add actual salary trend lines by sex
+    fig_compare.add_traces(
+        px.scatter(
+            filtered_data[filtered_data["sex"] == "M"],
+            x="years_experience",
+            y="salary",
+            trendline="ols",
+        ).data
+    )
+    fig_compare.add_traces(
+        px.scatter(
+            filtered_data[filtered_data["sex"] == "F"],
+            x="years_experience",
+            y="salary",
+            trendline="ols",
+        ).data
+    )
+
+    # Add expected salary trend line (based on model without sex)
+    filtered_data["expected_salary"] = np.exp(filtered_data["expected_log_salary"])
+    fig_compare.add_traces(
+        px.scatter(
+            filtered_data, x="years_experience", y="expected_salary", trendline="ols"
+        ).data
+    )
+
+    # Update legend
+    fig_compare.data[2].name = "Male trend (actual)"
+    fig_compare.data[3].name = "Female trend (actual)"
+    fig_compare.data[4].name = "Expected trend (fair model)"
+
+    # Show the plot
+    st.plotly_chart(fig_compare, use_container_width=True)
+
+    st.markdown(
+        """
+    **How to interpret:**
+    - The "Expected trend" shows what salary would be predicted based only on legitimate factors (excluding sex)
+    - If one sex's trend line is consistently above or below the expected trend, it suggests potential bias
+    - Differences between actual and expected salaries form the basis for our "underpaid" analysis below
+    """
+    )
+
+    # Distribution of differences by sex
+    st.markdown("#### Distribution of Salary Differences from Expected")
+
+    fig_diff = px.histogram(
+        filtered_data,
+        x="percent_diff",
+        color="sex",
+        barmode="overlay",
+        opacity=0.7,
+        labels={"percent_diff": "% Difference from Expected Salary", "sex": "Sex"},
+    )
+
+    st.plotly_chart(fig_diff, use_container_width=True)
+
+    st.markdown(
+        """
+    This histogram shows how actual salaries differ from expected salaries (as percentages).
+    - Values below 0% indicate faculty who are paid less than expected based on their qualifications
+    - Values above 0% indicate faculty who are paid more than expected based on their qualifications
+    - If one sex's distribution is shifted left, it suggests that group is more likely to be underpaid
+    """
+    )
+
+    # --- Section F: Logistic Regression Analysis ---
+    st.subheader("F) Underpaid Faculty Analysis")
+
+    st.markdown(
+        """
+    ### Are Women More Likely to be "Underpaid"?
+    
+    Using our "fair salary" model from above, we can identify faculty who appear to be underpaid
+    relative to what would be expected based on their qualifications. Then we can test whether
+    being female increases the likelihood of being underpaid.
+    
+    This approach might detect patterns of bias that aren't evident in average effects.
+    """
+    )
+
+    # Define "underpaid" threshold with slider
+    st.markdown(
+        """
+    #### Defining "Underpaid"
+    
+    We consider faculty to be "underpaid" if their actual salary is below their expected salary
+    by more than a certain percentage. Use the slider below to adjust this threshold.
+    """
+    )
+
+    threshold = st.slider("Underpaid Threshold (%)", -20, -5, -10) / 100
+    filtered_data["underpaid"] = (filtered_data["salary_residual"] < threshold).astype(
+        int
+    )
+
+    st.markdown(
+        f"""
+    With the current threshold of {threshold*100:.0f}%, faculty are considered "underpaid" if 
+    their actual salary is more than {abs(threshold*100):.0f}% below what would be expected
+    based on their qualifications.
+    """
+    )
+
+    # Count of underpaid by sex
+    st.markdown("#### Percentage of Faculty Classified as Underpaid by Sex")
+
+    underpaid_by_sex = (
+        pd.crosstab(filtered_data["sex"], filtered_data["underpaid"], normalize="index")
+        * 100
+    )
+    underpaid_by_sex.columns = ["Fairly Paid (%)", "Underpaid (%)"]
+
+    st.dataframe(underpaid_by_sex.round(1))
+
+    if "M" in underpaid_by_sex.index and "F" in underpaid_by_sex.index:
+        male_underpaid = underpaid_by_sex.loc["M", "Underpaid (%)"]
+        female_underpaid = underpaid_by_sex.loc["F", "Underpaid (%)"]
+        diff = female_underpaid - male_underpaid
+
+        if abs(diff) > 5:
+            st.markdown(
+                f"""
+            **Note:** {female_underpaid:.1f}% of women are classified as underpaid compared to {male_underpaid:.1f}% of men 
+            (a difference of {abs(diff):.1f} percentage points). This suggests a potential pattern, but we'll use
+            logistic regression to test if this difference is statistically significant.
+            """
+            )
+
+    # Visualization of salary residuals with threshold line
+    st.markdown("#### Distribution of Salary Residuals by Sex")
+    st.markdown(
+        """
+    This histogram shows the distribution of residuals (actual salary minus expected salary)
+    for men and women. The vertical red line marks the threshold for being classified as "underpaid."
+    """
+    )
+
+    fig5 = px.histogram(
+        filtered_data,
+        x="salary_residual",
+        color="sex",
+        barmode="overlay",
+        opacity=0.7,
+        labels={"salary_residual": "Log Salary Residual", "sex": "Sex"},
+    )
+
+    # Add vertical line at threshold
+    fig5.add_vline(x=threshold, line_dash="dash", line_color="red")
+    st.plotly_chart(fig5, use_container_width=True)
+
+    st.markdown(
+        """
+    **How to interpret:** If the female distribution is shifted left relative to the male distribution,
+    it suggests women are more likely to be paid below their expected salary. The area to the left of
+    the red line represents faculty classified as "underpaid."
+    """
+    )
+
+    # Feature selection for logistic regression
+    st.markdown("#### Logistic Regression Analysis")
+    st.markdown(
+        """
+    Now we'll use logistic regression to test whether being female increases the odds of being underpaid,
+    even after accounting for other factors that might affect this probability.
+        
+    Select which factors you'd like to include in the model:
+    """
+    )
+
+    # Features to include - keep all options but add warnings
+    possible_features = ["female", "is_arts", "is_prof", "years_experience", "is_phd"]
+    selected_features = st.multiselect(
+        "Features for Logistic Model:", options=possible_features, default=["female"]
+    )
+
+    # Add warning about field variables when a specific field is selected
+    if selected_field != "All":
+        if "is_arts" in selected_features and selected_field == "Arts":
+            st.warning(
+                "⚠️ Including 'is_arts' may cause errors when you've already filtered to Arts field, as all records will have the same value (is_arts=1)."
+            )
+        if "is_prof" in selected_features and selected_field == "Prof":
+            st.warning(
+                "⚠️ Including 'is_prof' may cause errors when you've already filtered to Professional field, as all records will have the same value (is_prof=1)."
+            )
+
+    if "female" not in selected_features:
+        st.warning("Adding 'female' as it's required for this analysis")
+        selected_features = ["female"] + selected_features
+
+    if len(selected_features) > 0:
+        # Prepare data for logistic regression
+        X = filtered_data[selected_features]
+        y = filtered_data["underpaid"]
+
+        # Run logistic regression with error handling
+        try:
+            # Check if we have both 0s and 1s in the target variable
+            if y.nunique() < 2:
+                st.warning(
+                    "All faculty are either underpaid or not underpaid at this threshold. Try adjusting the threshold."
+                )
+            else:
+                logit_model = sm.Logit(y, sm.add_constant(X)).fit(disp=0)
+
+                # Create summary dataframe
+                logit_results = pd.DataFrame(
+                    {
+                        "Variable": logit_model.params.index,
+                        "Coefficient": logit_model.params.values,
+                        "Std Error": logit_model.bse.values,
+                        "p-value": logit_model.pvalues.values,
+                        "Odds Ratio": np.exp(logit_model.params.values),
+                        "95% CI Lower": np.exp(logit_model.conf_int()[0]),
+                        "95% CI Upper": np.exp(logit_model.conf_int()[1]),
+                    }
+                )
+
+                # Format numeric columns
+                for col in [
+                    "Coefficient",
+                    "Std Error",
+                    "p-value",
+                    "Odds Ratio",
+                    "95% CI Lower",
+                    "95% CI Upper",
+                ]:
+                    logit_results[col] = logit_results[col].round(4)
+
+                # Add significance indicator
+                logit_results["Significance"] = logit_results["p-value"].apply(
+                    lambda p: (
+                        "***"
+                        if p < 0.001
+                        else ("**" if p < 0.01 else ("*" if p < 0.05 else "ns"))
+                    )
+                )
+
+                st.dataframe(logit_results)
+
+                st.markdown(
+                    """
+                **How to interpret:**
+                - **Coefficient**: Log odds ratio (effect on log-odds of being underpaid)
+                - **Odds Ratio**: How many times more/less likely a group is to be underpaid
+                - **p-value**: Statistical significance of the effect
+                """
+                )
+
+                # Interpret the female coefficient
+                female_logit_coef = logit_model.params["female"]
+                female_logit_pval = logit_model.pvalues["female"]
+                female_odds_ratio = np.exp(female_logit_coef)
+                ci_lower = np.exp(logit_model.conf_int().loc["female"][0])
+                ci_upper = np.exp(logit_model.conf_int().loc["female"][1])
+
+                st.markdown("#### Key Finding: Likelihood of Being Underpaid")
+
+                if female_logit_pval < 0.05:
+                    if female_odds_ratio > 1:
+                        logit_interpretation = f"Women are {female_odds_ratio:.2f} times more likely to be underpaid than men (95% CI: {ci_lower:.2f} to {ci_upper:.2f}, p={female_logit_pval:.4f})."
+                        st.error(logit_interpretation)
+                        st.markdown(
+                            """
+                        **This statistically significant result suggests potential sex bias in salary determination.**
+                        
+                        Even after accounting for other factors, women appear to be at higher risk of receiving salaries
+                        below what would be expected based on their qualifications.
+                        """
+                        )
+                    else:
+                        logit_interpretation = f"Women are {1/female_odds_ratio:.2f} times less likely to be underpaid than men (95% CI: {1/ci_upper:.2f} to {1/ci_lower:.2f}, p={female_logit_pval:.4f})."
+                        st.success(logit_interpretation)
+                else:
+                    logit_interpretation = f"There is no statistically significant difference between men and women in the likelihood of being underpaid (p={female_logit_pval:.4f})."
+                    st.info(logit_interpretation)
+                    st.markdown(
+                        """
+                    **The absence of a significant difference suggests that men and women have similar chances of being paid below expectations.**
+                    
+                    This finding aligns with a fair salary determination process with respect to sex.
+                    """
+                    )
+
+        except Exception as e:
+            st.error(f"Error in logistic regression: {str(e)}")
+            st.warning(
+                """
+            This error may be due to complete or quasi-complete separation in the data (a perfect predictor).
+            Try adjusting the threshold or adding more features to the model.
+            """
+            )
+
+    # --- Section G: Conclusion ---
+    st.subheader("G) Conclusion and Limitations")
+
+    st.markdown(
+        """
+    ### Summary of Findings
+    
+    Our analysis used multiple approaches to investigate potential sex bias in faculty salaries at this university in 1995:
+    
+    1. **Descriptive Statistics:** We observed raw salary differences between men and women.
+    
+    2. **Linear Regression:** We estimated the percentage difference in salary attributable to sex after
+       controlling for rank, field, experience, degree, and administrative duties.
+    
+    3. **Fair Salary Model:** We created a model that predicts salary based solely on legitimate factors,
+       excluding sex, to determine what faculty members should earn based on their qualifications.
+    
+    4. **Logistic Regression:** We tested whether women are more likely than men to be "underpaid"
+       relative to expectations based on their qualifications.
+    
+    ### Limitations
+    
+    Several important limitations should be considered:
+    
+    1. **Unmeasured Factors:** Our analysis couldn't control for variables not in the dataset, such as
+       publication record, teaching evaluations, or grant funding, which might legitimately affect salary.
+    
+    2. **Pre-existing Bias:** If bias affected earlier decisions (hiring, promotion), controlling for
+       rank might actually mask discrimination rather than isolate it.
+    
+    3. **Causality:** Statistical associations don't necessarily imply causation. We can identify
+       patterns but can't definitively establish their causes.
+    
+    4. **Sample Size:** Particularly when filtering by field, small sample sizes may limit statistical power
+       and the reliability of estimates.
+    
+    ### Next Steps
+    
+    For a comprehensive understanding of potential sex bias at this university, we should also examine:
+    
+    1. Questions 2-4 in this analysis (starting salaries, salary increases, and promotion patterns)
+    2. Department-level patterns that might be obscured in aggregated analyses
+    3. Changes over time in salary determination practices
+    """
+    )
 
 elif selected_tab == "Starting Salaries":
     st.header("Question 2: Has Sex Bias Existed in Starting Salaries?")
@@ -230,6 +1164,11 @@ elif selected_tab == "Promotions (Associate to Full)":
         st.stop()
 
     st.markdown("**Select Model Features:**")
+
+    possible_features = ["sex_numeric", "field", "deg_type", "admin_any", "yrdeg_min"]
+    default_feats = possible_features.copy()
+    selected_features = st.multiselect("Features to Include:", options=possible_features, default=default_feats)
+
     possible_features = [
         "sex",         # Categorical
         "field",       # Categorical
@@ -243,6 +1182,7 @@ elif selected_tab == "Promotions (Associate to Full)":
         "Features to Include:", 
         options=possible_features, 
         default=possible_features
+
     )
     if len(selected_features) == 0:
         st.warning("Please select at least one feature.")
