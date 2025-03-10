@@ -86,7 +86,7 @@ if selected_tab == "Introduction":
     """)
     
 elif selected_tab == "Question 1: 1995 Sex Bias":
-=======
+
     st.markdown("""
         **Project Overview:**  
         In this team project, we analyze faculty salary data from a U.S. university to explore whether there are differences in average salary and career outcomes between men and women. The overarching goal is to determine whether sex bias exists and to describe the magnitude and nature of its effect.
@@ -1042,7 +1042,198 @@ elif selected_tab == "Starting Salaries":
 
 elif selected_tab == "Salary Increases (1990-1995)":
     st.header("Question 3: Has Sex Bias Existed in Salary Increases (1990-1995)?")
-    st.warning("Placeholder: Salary growth analysis here.")
+    st.markdown("""
+    **Objective:**  
+    Determine if there's evidence of sex bias in salary increases between 1990 and 1995.
+    """)
+
+    # --- Section A: Data Preparation ---
+    st.subheader("A) Data Preparation")
+    import salary_bias_analysis as sba
+
+    summary = sba.prepare_salary_increase_data(data)
+    if summary.empty:
+        st.warning("No eligible records found. Check your dataset.")
+        st.stop()
+
+    field_list = ["All"] + sorted(summary['field'].dropna().unique().tolist())
+    selected_field = st.selectbox("Field Filter", field_list, index=0)
+    if selected_field != "All":
+        summary_field = summary[summary['field'] == selected_field].copy()
+    else:
+        summary_field = summary.copy()
+    if summary_field.empty:
+        st.warning("No records after applying field filter.")
+        st.stop()
+
+    # --- Section B: Descriptive Box Plots ---
+    st.subheader("B) Salary Increase Distributions by Sex")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        box_fig = sba.create_salary_increase_boxplot(summary_field)
+        if box_fig is None:
+            st.warning("Not enough data for box plot.")
+        else:
+            st.plotly_chart(box_fig, use_container_width=True)
+
+    with col2:
+        pct_box_fig = sba.create_pct_increase_boxplot(summary_field)
+        if pct_box_fig is None:
+            st.warning("Not enough data for percentage box plot.")
+        else:
+            st.plotly_chart(pct_box_fig, use_container_width=True)
+            
+    # --- Section C: T-Test for Salary Increases ---
+    st.subheader("C) Welch's T-Test for Salary Increases")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Absolute Salary Increase Test**")
+        test_abs = sba.welch_ttest_salary_increase(summary_field, 'salary_increase')
+        if test_abs is None:
+            st.info("Not enough data for t-test (need both M and F present).")
+        else:
+            st.write(f"**t-Statistic**: {test_abs['t_stat']:.4f}")
+            st.write(f"**p-value**: {test_abs['p_val']:.4f}")
+            st.write(f"**Men's Mean Increase**: ${test_abs['mean_men']:.2f}")
+            st.write(f"**Women's Mean Increase**: ${test_abs['mean_women']:.2f}")
+            st.write(f"**Difference (M - F)**: ${test_abs['diff']:.2f}")
+            st.write(f"**95% CI**: (${test_abs['ci_lower']:.2f}, ${test_abs['ci_upper']:.2f})")
+            st.info(test_abs['p_val_interpretation'])
+    
+    with col2:
+        st.markdown("**Percentage Salary Increase Test**")
+        test_pct = sba.welch_ttest_salary_increase(summary_field, 'pct_increase')
+        if test_pct is None:
+            st.info("Not enough data for percentage t-test.")
+        else:
+            st.write(f"**t-Statistic**: {test_pct['t_stat']:.4f}")
+            st.write(f"**p-value**: {test_pct['p_val']:.4f}")
+            st.write(f"**Men's Mean % Increase**: {test_pct['mean_men']:.2f}%")
+            st.write(f"**Women's Mean % Increase**: {test_pct['mean_women']:.2f}%")
+            st.write(f"**Difference (M - F)**: {test_pct['diff']:.2f}%")
+            st.write(f"**95% CI**: ({test_pct['ci_lower']:.2f}%, {test_pct['ci_upper']:.2f}%)")
+            st.info(test_pct['p_val_interpretation'])
+    
+    st.markdown("""
+    - **Null Hypothesis** H₀: Mean salary increases for men and women are equal.
+    - **Alternative Hypothesis** H₁: Mean salary increases differ between men and women.
+    """)
+
+    # --- Section D: Scatter Plots ---
+    st.subheader("D) Relationship Visualizations")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        scatter_exp = sba.create_scatter_experience_increase(summary_field)
+        if scatter_exp is None:
+            st.warning("Not enough data for experience scatter plot.")
+        else:
+            st.plotly_chart(scatter_exp, use_container_width=True)
+            st.markdown("""
+            **Interpretation:**
+            - This plot shows how salary increases relate to years of experience.
+            - Trend lines help identify if the experience-increase relationship differs by sex.
+            """)
+    
+    with col2:
+        salary_comp = sba.create_salary_comparison_plot(summary_field)
+        if salary_comp is None:
+            st.warning("Not enough data for salary comparison plot.")
+        else:
+            st.plotly_chart(salary_comp, use_container_width=True)
+            st.markdown("""
+            **Interpretation:**
+            - Points above the dashed line received salary increases.
+            - The slope of each trend line indicates the average growth rate.
+            - Different slopes by sex suggest potential bias in salary growth.
+            """)
+            
+    # --- Section E: Advanced Linear Regression Model ---
+    st.subheader("E) Linear Regression Models for Salary Increases")
+    
+    X_all, y_all, feature_cols = sba.prepare_data_for_modeling(summary_field)
+    if X_all.empty or len(y_all) < 5:
+        st.warning("Insufficient data for modeling.")
+        st.stop()
+    
+    st.markdown("**Select Model Features:**")
+    possible_features = ['is_female', 'field', 'deg', 'rank_1990','rank_1995', 'years_experience', 'salary_1990','startyr']
+    default_feats = possible_features.copy()
+    selected_features = st.multiselect("Features to Include:", options=possible_features, default=default_feats)
+    
+    if len(selected_features) == 0:
+        st.warning("Please select at least one feature.")
+        st.stop()
+    
+    target_options = {"Absolute Increase ($)": "salary_increase", "Percentage Increase (%)": "pct_increase"}
+    selected_target = st.radio("Target Variable:", options=list(target_options.keys()))
+    target_col = target_options[selected_target]
+    
+    X_all, y_all, _ = sba.prepare_data_for_modeling(summary_field, target=target_col)
+    
+    pipe, preds, stats = sba.build_and_run_salary_model(X_all, y_all, selected_features)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Model Statistics:**")
+        st.write(f"R-squared: {stats['r2']:.4f}")
+        st.write(f"Adjusted R-squared: {stats['adjusted_r2']:.4f}")
+        st.write(f"Mean Absolute Error: {stats['mae']:.2f}")
+        st.write(f"Residual Standard Error: {stats['rse']:.2f}")
+        st.write(f"Number of Observations: {stats['n']}")
+        st.write(f"Number of Parameters: {stats['p']}")
+    
+    with col2:
+        st.markdown("""
+        **Model Interpretation:**
+        - R-squared indicates the proportion of variance explained by the model.
+        - The coefficient for 'is_female' shows the effect of gender after controlling for other variables.
+        - Negative coefficient for 'is_female' suggests women received smaller increases than men, all else equal.
+        """)
+    
+    st.markdown("**Regression Coefficients:**")
+    coef_fig = sba.plot_feature_importances(pipe, X_all, selected_features)
+    st.plotly_chart(coef_fig, use_container_width=True)
+    
+    st.info("""
+    **Key Assumptions:**
+    - Linear relationships between predictors and salary increases.
+    - Independence of observations.
+    - Homoscedasticity (constant variance of residuals).
+    - Normally distributed residuals.
+    
+    **Note:** The coefficient for 'is_female' is particularly important as it represents 
+    the estimated effect of gender on salary increases after controlling for other factors.
+    """)
+    
+    # --- Section F: Comprehensive Analysis ---
+    st.subheader("F) Comprehensive Analysis & Conclusion")
+    
+    analysis_results = sba.analyze_salary_increase_bias(summary_field)
+    
+    st.markdown("### Summary of Findings:")
+    
+    # Format the summary table
+    if 'summary' in analysis_results:
+        summary_df = pd.DataFrame(analysis_results['summary'])
+        st.dataframe(summary_df)
+    
+    st.markdown("### Conclusion:")
+    if 'conclusion' in analysis_results:
+        st.write(analysis_results['conclusion'])
+    
+    st.markdown("""
+    **Limitations & Considerations:**
+    1. The analysis doesn't account for all potential confounding variables (e.g., performance metrics, publication counts).
+    2. Field-specific differences may exist but require larger sample sizes within each field.
+    3. The regression model assumes linear relationships which may not fully capture complex interactions.
+    """)
+
 
 elif selected_tab == "Promotions (Associate to Full)":
     st.header(
@@ -1167,7 +1358,7 @@ elif selected_tab == "Promotions (Associate to Full)":
 
     possible_features = ["sex_numeric", "field", "deg_type", "admin_any", "yrdeg_min"]
     default_feats = possible_features.copy()
-    selected_features = st.multiselect("Features to Include:", options=possible_features, default=default_feats)
+    
 
     possible_features = [
         "sex",         # Categorical
