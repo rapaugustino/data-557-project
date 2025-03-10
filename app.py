@@ -86,7 +86,6 @@ if selected_tab == "Introduction":
     """)
     
 elif selected_tab == "Question 1: 1995 Sex Bias":
-
     st.markdown("""
         **Project Overview:**  
         In this team project, we analyze faculty salary data from a U.S. university to explore whether there are differences in average salary and career outcomes between men and women. The overarching goal is to determine whether sex bias exists and to describe the magnitude and nature of its effect.
