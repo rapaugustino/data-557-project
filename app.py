@@ -30,7 +30,7 @@ if "selected_tab" not in st.session_state:
 # Create a persistent radio button in the sidebar to select a tab
 selected_tab = st.sidebar.radio(
     "Select Analysis", tab_options, index=tab_options.index(st.session_state.selected_tab))
-st.session_state.selected_tab = selected_tab
+#st.session_state.selected_tab = selected_tab
 
 # --------------------------------------------------------------------
 # Data Loading
@@ -223,7 +223,7 @@ elif selected_tab == "Promotions (Associate to Full)":
     # ----------------------------------------------
     # 3) Logistic Regression
     # ----------------------------------------------
-    st.subheader("Logistic Regression with Feature Importance")
+    st.subheader("Logistic Regression with Feature Importance", divider="violet")
     X_all, y_all, summary_all = pa.prepare_data_for_modeling(summary_field)
     if X_all.empty or y_all.nunique() < 2:
         st.warning("Insufficient variation in data for modeling.")
