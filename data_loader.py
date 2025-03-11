@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def load_data(file_path: str = "salary.txt") -> pd.DataFrame:
     """
     Loads the salary dataset from 'salary.txt' using flexible whitespace separation.
@@ -8,8 +9,8 @@ def load_data(file_path: str = "salary.txt") -> pd.DataFrame:
     """
     df = pd.read_csv(
         file_path,
-        sep=r'[\t\s]+',  # regex for any amount of whitespace
+        sep=r"[\t\s]+",  # regex for any amount of whitespace
         header=0,
-        engine='python'
+        engine="python",
     )
     return df
