@@ -6,16 +6,13 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import plotly.express as px
 import plotly.graph_objects as go
-import promotions_analysis as pa  
+import promotions_analysis as pa
 
 
 # --------------------------------------------------------------------
 # Streamlit Page Configuration
 # --------------------------------------------------------------------
-st.set_page_config(
-    page_title="Faculty Salary Analysis Project",
-    layout="wide"
-)
+st.set_page_config(page_title="Faculty Salary Analysis Project", layout="wide")
 
 # --------------------------------------------------------------------
 # Persistent Tab Selector in the Sidebar
@@ -27,7 +24,7 @@ tab_options = [
     "Starting Salaries",
     "Salary Increases (1990-1995)",
     "Promotions (Associate to Full)",
-    "Summary of Findings"
+    "Summary of Findings",
 ]
 
 # Initialize the selected tab in session state if it doesn't exist
@@ -36,8 +33,11 @@ if "selected_tab" not in st.session_state:
 
 # Create a persistent radio button in the sidebar to select a tab
 selected_tab = st.sidebar.radio(
-    "Select Analysis", tab_options, index=tab_options.index(st.session_state.selected_tab))
-#st.session_state.selected_tab = selected_tab
+    "Select Analysis",
+    tab_options,
+    index=tab_options.index(st.session_state.selected_tab),
+)
+# st.session_state.selected_tab = selected_tab
 
 # --------------------------------------------------------------------
 # Data Loading
@@ -51,12 +51,7 @@ def load_data(file_path="salary.txt"):
     Expects columns:
     ['case','id','sex','deg','yrdeg','field','startyr','year','rank','admin','salary'].
     """
-    df = pd.read_csv(
-        file_path,
-        sep=r'[\t\s]+',
-        header=0,
-        engine='python'
-    )
+    df = pd.read_csv(file_path, sep=r"[\t\s]+", header=0, engine="python")
     return df
 
 
@@ -83,10 +78,12 @@ if selected_tab == "Introduction":
     - The dataset includes:  
       `case, id, sex, deg, yrdeg, field, startyr, year, rank, admin, salary`
     - Each row corresponds to a faculty member in a given year (1976-1995).
-    """)
-    
+    """
+    )
+
 elif selected_tab == "Question 1: 1995 Sex Bias":
-    st.markdown("""
+    st.markdown(
+        """
         **Project Overview:**  
         In this team project, we analyze faculty salary data from a U.S. university to explore whether there are differences in average salary and career outcomes between men and women. The overarching goal is to determine whether sex bias exists and to describe the magnitude and nature of its effect.
 
@@ -122,7 +119,8 @@ elif selected_tab == "Question 1: 1995 Sex Bias":
         - The dataset and research questions for this project were provided by Professor Scott Emerson.
         - We also extend our sincere gratitude to our course instructor, Professor Katie Wilson, for their guidance and support throughout this project. 
         - Team members: Kyle Cullen Bretherton, Aravindh Manavalan, Richard Pallangyo, Akshay Ravi, and Vijay Balaji S
-        """)
+        """
+    )
 
 elif selected_tab == "1995 Sex Bias":
 
@@ -1041,10 +1039,12 @@ elif selected_tab == "Starting Salaries":
 
 elif selected_tab == "Salary Increases (1990-1995)":
     st.header("Question 3: Has Sex Bias Existed in Salary Increases (1990-1995)?")
-    st.markdown("""
+    st.markdown(
+        """
     **Objective:**  
     Determine if there's evidence of sex bias in salary increases between 1990 and 1995.
-    """)
+    """
+    )
 
     # --- Section A: Data Preparation ---
     st.subheader("A) Data Preparation")
@@ -1055,10 +1055,10 @@ elif selected_tab == "Salary Increases (1990-1995)":
         st.warning("No eligible records found. Check your dataset.")
         st.stop()
 
-    field_list = ["All"] + sorted(summary['field'].dropna().unique().tolist())
+    field_list = ["All"] + sorted(summary["field"].dropna().unique().tolist())
     selected_field = st.selectbox("Field Filter", field_list, index=0)
     if selected_field != "All":
-        summary_field = summary[summary['field'] == selected_field].copy()
+        summary_field = summary[summary["field"] == selected_field].copy()
     else:
         summary_field = summary.copy()
     if summary_field.empty:
@@ -1082,15 +1082,15 @@ elif selected_tab == "Salary Increases (1990-1995)":
             st.warning("Not enough data for percentage box plot.")
         else:
             st.plotly_chart(pct_box_fig, use_container_width=True)
-            
+
     # --- Section C: T-Test for Salary Increases ---
     st.subheader("C) Welch's T-Test for Salary Increases")
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         st.markdown("**Absolute Salary Increase Test**")
-        test_abs = sba.welch_ttest_salary_increase(summary_field, 'salary_increase')
+        test_abs = sba.welch_ttest_salary_increase(summary_field, "salary_increase")
         if test_abs is None:
             st.info("Not enough data for t-test (need both M and F present).")
         else:
@@ -1099,12 +1099,14 @@ elif selected_tab == "Salary Increases (1990-1995)":
             st.write(f"**Men's Mean Increase**: ${test_abs['mean_men']:.2f}")
             st.write(f"**Women's Mean Increase**: ${test_abs['mean_women']:.2f}")
             st.write(f"**Difference (M - F)**: ${test_abs['diff']:.2f}")
-            st.write(f"**95% CI**: (${test_abs['ci_lower']:.2f}, ${test_abs['ci_upper']:.2f})")
-            st.info(test_abs['p_val_interpretation'])
-    
+            st.write(
+                f"**95% CI**: (${test_abs['ci_lower']:.2f}, ${test_abs['ci_upper']:.2f})"
+            )
+            st.info(test_abs["p_val_interpretation"])
+
     with col2:
         st.markdown("**Percentage Salary Increase Test**")
-        test_pct = sba.welch_ttest_salary_increase(summary_field, 'pct_increase')
+        test_pct = sba.welch_ttest_salary_increase(summary_field, "pct_increase")
         if test_pct is None:
             st.info("Not enough data for percentage t-test.")
         else:
@@ -1113,71 +1115,93 @@ elif selected_tab == "Salary Increases (1990-1995)":
             st.write(f"**Men's Mean % Increase**: {test_pct['mean_men']:.2f}%")
             st.write(f"**Women's Mean % Increase**: {test_pct['mean_women']:.2f}%")
             st.write(f"**Difference (M - F)**: {test_pct['diff']:.2f}%")
-            st.write(f"**95% CI**: ({test_pct['ci_lower']:.2f}%, {test_pct['ci_upper']:.2f}%)")
-            st.info(test_pct['p_val_interpretation'])
-    
-    st.markdown("""
+            st.write(
+                f"**95% CI**: ({test_pct['ci_lower']:.2f}%, {test_pct['ci_upper']:.2f}%)"
+            )
+            st.info(test_pct["p_val_interpretation"])
+
+    st.markdown(
+        """
     - **Null Hypothesis** H₀: Mean salary increases for men and women are equal.
     - **Alternative Hypothesis** H₁: Mean salary increases differ between men and women.
-    """)
+    """
+    )
 
     # --- Section D: Scatter Plots ---
     st.subheader("D) Relationship Visualizations")
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         scatter_exp = sba.create_scatter_experience_increase(summary_field)
         if scatter_exp is None:
             st.warning("Not enough data for experience scatter plot.")
         else:
             st.plotly_chart(scatter_exp, use_container_width=True)
-            st.markdown("""
+            st.markdown(
+                """
             **Interpretation:**
             - This plot shows how salary increases relate to years of experience.
             - Trend lines help identify if the experience-increase relationship differs by sex.
-            """)
-    
+            """
+            )
+
     with col2:
         salary_comp = sba.create_salary_comparison_plot(summary_field)
         if salary_comp is None:
             st.warning("Not enough data for salary comparison plot.")
         else:
             st.plotly_chart(salary_comp, use_container_width=True)
-            st.markdown("""
+            st.markdown(
+                """
             **Interpretation:**
             - Points above the dashed line received salary increases.
             - The slope of each trend line indicates the average growth rate.
             - Different slopes by sex suggest potential bias in salary growth.
-            """)
-            
+            """
+            )
+
     # --- Section E: Advanced Linear Regression Model ---
     st.subheader("E) Linear Regression Models for Salary Increases")
-    
+
     X_all, y_all, feature_cols = sba.prepare_data_for_modeling(summary_field)
     if X_all.empty or len(y_all) < 5:
         st.warning("Insufficient data for modeling.")
         st.stop()
-    
+
     st.markdown("**Select Model Features:**")
-    possible_features = ['is_female', 'field', 'deg', 'rank_1990','rank_1995', 'years_experience', 'salary_1990','startyr']
+    possible_features = [
+        "is_female",
+        "field",
+        "deg",
+        "rank_1990",
+        "rank_1995",
+        "years_experience",
+        "salary_1990",
+        "startyr",
+    ]
     default_feats = possible_features.copy()
-    selected_features = st.multiselect("Features to Include:", options=possible_features, default=default_feats)
-    
+    selected_features = st.multiselect(
+        "Features to Include:", options=possible_features, default=default_feats
+    )
+
     if len(selected_features) == 0:
         st.warning("Please select at least one feature.")
         st.stop()
-    
-    target_options = {"Absolute Increase ($)": "salary_increase", "Percentage Increase (%)": "pct_increase"}
+
+    target_options = {
+        "Absolute Increase ($)": "salary_increase",
+        "Percentage Increase (%)": "pct_increase",
+    }
     selected_target = st.radio("Target Variable:", options=list(target_options.keys()))
     target_col = target_options[selected_target]
-    
+
     X_all, y_all, _ = sba.prepare_data_for_modeling(summary_field, target=target_col)
-    
+
     pipe, preds, stats = sba.build_and_run_salary_model(X_all, y_all, selected_features)
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         st.write("**Model Statistics:**")
         st.write(f"R-squared: {stats['r2']:.4f}")
@@ -1186,20 +1210,23 @@ elif selected_tab == "Salary Increases (1990-1995)":
         st.write(f"Residual Standard Error: {stats['rse']:.2f}")
         st.write(f"Number of Observations: {stats['n']}")
         st.write(f"Number of Parameters: {stats['p']}")
-    
+
     with col2:
-        st.markdown("""
+        st.markdown(
+            """
         **Model Interpretation:**
         - R-squared indicates the proportion of variance explained by the model.
         - The coefficient for 'is_female' shows the effect of gender after controlling for other variables.
         - Negative coefficient for 'is_female' suggests women received smaller increases than men, all else equal.
-        """)
-    
+        """
+        )
+
     st.markdown("**Regression Coefficients:**")
     coef_fig = sba.plot_feature_importances(pipe, X_all, selected_features)
     st.plotly_chart(coef_fig, use_container_width=True)
-    
-    st.info("""
+
+    st.info(
+        """
     **Key Assumptions:**
     - Linear relationships between predictors and salary increases.
     - Independence of observations.
@@ -1208,45 +1235,48 @@ elif selected_tab == "Salary Increases (1990-1995)":
     
     **Note:** The coefficient for 'is_female' is particularly important as it represents 
     the estimated effect of gender on salary increases after controlling for other factors.
-    """)
-    
+    """
+    )
+
     # --- Section F: Comprehensive Analysis ---
     st.subheader("F) Comprehensive Analysis & Conclusion")
-    
+
     analysis_results = sba.analyze_salary_increase_bias(summary_field)
-    
+
     st.markdown("### Summary of Findings:")
-    
+
     # Format the summary table
-    if 'summary' in analysis_results:
-        summary_df = pd.DataFrame(analysis_results['summary'])
+    if "summary" in analysis_results:
+        summary_df = pd.DataFrame(analysis_results["summary"])
         st.dataframe(summary_df)
-    
+
     st.markdown("### Conclusion:")
-    if 'conclusion' in analysis_results:
-        st.write(analysis_results['conclusion'])
-    
-    st.markdown("""
+    if "conclusion" in analysis_results:
+        st.write(analysis_results["conclusion"])
+
+    st.markdown(
+        """
     **Limitations & Considerations:**
     1. The analysis doesn't account for all potential confounding variables (e.g., performance metrics, publication counts).
     2. Field-specific differences may exist but require larger sample sizes within each field.
     3. The regression model assumes linear relationships which may not fully capture complex interactions.
-    """)
+    """
+    )
 
 
 elif selected_tab == "Promotions (Associate to Full)":
-    st.header(
-        """Question 4: Sex Bias in Promotions from Associate to Full Professor"""
-    )
-    st.markdown(""" 
+    st.header("""Question 4: Sex Bias in Promotions from Associate to Full Professor""")
+    st.markdown(
+        """ 
    **Objective:** Determine if there is a disparity in promotion rates—and time-to-promotion—by sex.
-    """)
+    """
+    )
     st.markdown("""---""")
 
-    st.header("""
+    st.header(
+        """
     Comparing Promotion Rates by Sex: Bar Chart & Statistical Test"""
     )
-    
 
     # --- Section A: Data Preparation ---
     summary = pa.prepare_promotion_data(data)
@@ -1254,10 +1284,10 @@ elif selected_tab == "Promotions (Associate to Full)":
         st.warning("No eligible records found. Check your dataset.")
         st.stop()
 
-    field_list = ["All"] + sorted(summary['field'].dropna().unique().tolist())
+    field_list = ["All"] + sorted(summary["field"].dropna().unique().tolist())
     selected_field = st.selectbox("Field Filter", field_list, index=0)
     if selected_field != "All":
-        summary_field = summary[summary['field'] == selected_field].copy()
+        summary_field = summary[summary["field"] == selected_field].copy()
     else:
         summary_field = summary.copy()
     if summary_field.empty:
@@ -1266,9 +1296,11 @@ elif selected_tab == "Promotions (Associate to Full)":
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("""
+        st.markdown(
+            """
             - **Null Hypothesis (H₀)**: The promotion rate from Associate to Full Professor is the same for men and women.
-            """)
+            """
+        )
         # --- Section B: Descriptive Bar Chart ---
         st.subheader("Promotion Counts by Sex", divider="violet")
         bar_fig = pa.create_promotion_bar_chart(summary_field)
@@ -1282,66 +1314,74 @@ elif selected_tab == "Promotions (Associate to Full)":
 
     with col2:
         # --- Section C: Two-Proportion Z-Test ---
-        st.markdown("""
+        st.markdown(
+            """
             - **Alternative Hypothesis (H₁)**: The promotion rate from Associate to Full Professor differs between men and women.
-            """)
-        st.subheader("Two-Proportion Z-Test for Promotion Rates",
-                     divider="violet")
+            """
+        )
+        st.subheader("Two-Proportion Z-Test for Promotion Rates", divider="violet")
         test_result = pa.welch_two_proportions_test(summary_field)[0]
         if test_result is None:
             st.info(
-                "Not enough data for a two-proportion z-test (need both M and F present).")
+                "Not enough data for a two-proportion z-test (need both M and F present)."
+            )
         else:
             result = {
-                "z_stat": test_result['z_stat'],
-                "p_val": test_result['p_val'],
-                "proportion_men": test_result['proportion_men'],
-                "proportion_women": test_result['proportion_women'],
-                "diff": test_result['diff'],
-                "ci_lower": test_result['ci_lower'],
-                "ci_upper": test_result['ci_upper'],
+                "z_stat": test_result["z_stat"],
+                "p_val": test_result["p_val"],
+                "proportion_men": test_result["proportion_men"],
+                "proportion_women": test_result["proportion_women"],
+                "diff": test_result["diff"],
+                "ci_lower": test_result["ci_lower"],
+                "ci_upper": test_result["ci_upper"],
             }
 
-            results_df = pd.DataFrame({"Statistic": [
-                "Z-Statistic",
-                "P-value",
-                "Men's Promotion Proportion",
-                "Women's Promotion Proportion",
-                "Difference (M - F)",
-                "95% CI"
-            ],
-                "Value":[
-                f"{result['z_stat']:.5f}",
-                f"{result['p_val']:.5f}",
-                f"{result['proportion_men']:.5f}", 
-                f"{result['proportion_women']:.5f}",
-                f"{result['diff']:.5f}",
-                f"({result['ci_lower']:.5f}, {result['ci_upper']:.5f})"
-            ]})
+            results_df = pd.DataFrame(
+                {
+                    "Statistic": [
+                        "Z-Statistic",
+                        "P-value",
+                        "Men's Promotion Proportion",
+                        "Women's Promotion Proportion",
+                        "Difference (M - F)",
+                        "95% CI",
+                    ],
+                    "Value": [
+                        f"{result['z_stat']:.5f}",
+                        f"{result['p_val']:.5f}",
+                        f"{result['proportion_men']:.5f}",
+                        f"{result['proportion_women']:.5f}",
+                        f"{result['diff']:.5f}",
+                        f"({result['ci_lower']:.5f}, {result['ci_upper']:.5f})",
+                    ],
+                }
+            )
 
             st.dataframe(results_df, hide_index=True, use_container_width=True)
-            st.info(test_result['p_val_interpretation'])
-            st.info(test_result['ci_interpretation'])
-            
+            st.info(test_result["p_val_interpretation"])
+            st.info(test_result["ci_interpretation"])
 
     st.markdown("""---""")
     # --- Section D: Survival Analysis ---
-    st.subheader("Kaplan-Meier Analysis of Time-to-Promotion between Men and Women",
-                 divider="violet")
+    st.subheader(
+        "Kaplan-Meier Analysis of Time-to-Promotion between Men and Women",
+        divider="violet",
+    )
     surv_fig = pa.create_survival_analysis(summary_field)
     if surv_fig is None:
-        st.warning(
-            "Not enough data or only one sex present for survival analysis.")
+        st.warning("Not enough data or only one sex present for survival analysis.")
     else:
         st.plotly_chart(surv_fig, use_container_width=True)
-        st.info("""
+        st.info(
+            """
         **Interpretation:**
 
         - The Kaplan-Meier curves above illustrate how long faculty members typically remain at the Associate rank before promotion, separated by sex (men vs. women).
         - A curve that declines more rapidly means that faculty from that group are generally promoted sooner.
         - If one sex consistently shows a faster decline, it suggests that faculty of that sex are promoted to Full Professor more quickly than faculty of the other sex.
         - Comparing these curves helps us identify whether there is a potential sex bias in the timing of promotions, such as if men are promoted more rapidly than women.
-        """)
+        """
+        )
     st.markdown("""---""")
 
     # ----------------------------------------------
@@ -1357,22 +1397,18 @@ elif selected_tab == "Promotions (Associate to Full)":
 
     possible_features = ["sex_numeric", "field", "deg_type", "admin_any", "yrdeg_min"]
     default_feats = possible_features.copy()
-    
 
     possible_features = [
-        "sex",         # Categorical
-        "field",       # Categorical
-        "deg_type",    # Categorical
-        "admin_any",   # Numeric (0/1)
-        "yrdeg",       # Numeric
-        "startyr",     # Numeric
-        "salary"       # Numeric
+        "sex",  # Categorical
+        "field",  # Categorical
+        "deg_type",  # Categorical
+        "admin_any",  # Numeric (0/1)
+        "yrdeg",  # Numeric
+        "startyr",  # Numeric
+        "salary",  # Numeric
     ]
     selected_features = st.multiselect(
-        "Features to Include:", 
-        options=possible_features, 
-        default=possible_features
-
+        "Features to Include:", options=possible_features, default=possible_features
     )
     if len(selected_features) == 0:
         st.warning("Please select at least one feature.")
@@ -1386,7 +1422,8 @@ elif selected_tab == "Promotions (Associate to Full)":
     # Plot coefficients
     coef_fig = pa.plot_feature_importances_logreg(pipe, X_all, selected_features)
     st.plotly_chart(coef_fig, use_container_width=True)
-    st.info("""
+    st.info(
+        """
         **Interpretation:**
 
         - Each **coefficient** in our logistic regression model indicates how strongly a given feature (or category) affects the likelihood of promotion from Associate to Full Professor, *holding other variables constant*.
@@ -1394,9 +1431,11 @@ elif selected_tab == "Promotions (Associate to Full)":
         - Conversely, a **negative coefficient** means the feature *lowers* the likelihood of promotion. For instance, if **Sex: F** appears with a negative coefficient, it indicates female faculty experience *reduced* odds of being promoted relative to men, assuming the same levels of all other variables (salary, field, degree type, etc.).
         - The **magnitude** of a coefficient reflects how substantial its impact is. Larger absolute values suggest the feature exerts a stronger influence (positive or negative) on promotion chances.
         - Critically, these coefficients help us assess potential **sex bias** in promotions. For instance, being female is associated with a **negative coefficient** in our model, while being male is associated with a **positive coefficient**. This observation points toward a disparity favoring men.
-        """)
+        """
+    )
 
-    st.markdown("""
+    st.markdown(
+        """
     ---
     ### Analysis Summary
 
@@ -1477,25 +1516,42 @@ elif selected_tab == "Promotions (Associate to Full)":
    ---
    **Note:**
    This study’s findings are based solely on the 1976–1995 dataset. Unmeasured factors, such as research output or departmental culture, may also influence promotion outcomes. Additionally, our method defines promotion by recording the first year a faculty member reaches Associate rank and then the first year they attain Full Professor status, which does not fully account for the exact duration spent at the Associate rank. This is particularly important for faculty who may have had very short tenures at the Associate level or were recently hired or left the department/institution.
-    """)
+    """
+    )
 
 elif selected_tab == "Summary of Findings":
     st.header("Summary of Findings")
-    
-    st.subheader("Does sex bias exist in the university in 1995?", divider='violet')
-    st.markdown("""
-    """)
-    
-    st.subheader("Are starting salaries different between male and female faculty?", divider='violet')
-    st.markdown("""
-    """)
-    
-    st.subheader("Have salary increases between 1990 and 1995 been influenced by sex?", divider='violet')
-    st.markdown("""
-    """)
-    
-    st.subheader("Has sex bias existed in granting promotions from Associate to Full Professor?",divider='violet')
-    st.markdown("""
+
+    st.subheader("Does sex bias exist in the university in 1995?", divider="violet")
+    st.markdown(
+        """
+    """
+    )
+
+    st.subheader(
+        "Are starting salaries different between male and female faculty?",
+        divider="violet",
+    )
+    st.markdown(
+        """
+    """
+    )
+
+    st.subheader(
+        "Have salary increases between 1990 and 1995 been influenced by sex?",
+        divider="violet",
+    )
+    st.markdown(
+        """
+    """
+    )
+
+    st.subheader(
+        "Has sex bias existed in granting promotions from Associate to Full Professor?",
+        divider="violet",
+    )
+    st.markdown(
+        """
     - Across most fields, men are more likely to be promoted and often promoted more quickly, consistent with potential sex bias—though significance varies by field (Arts being a notable exception).
     - Having a PhD, being in a Professional field, and having more years since degree also increase promotion odds, while being female or in the Arts field somehow hinders promotion.
     - Overall, these findings support the conclusion that sex, field, and highest degree are influential in determining who becomes Full Professor, with men benefiting in many disciplines, especially early in the Associate timeline."""
@@ -1503,4 +1559,3 @@ elif selected_tab == "Summary of Findings":
 
 
 st.markdown("---")
-  
