@@ -4,12 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import scipy.stats as stats
-
-# Sklearn modules
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.linear_model import LinearRegression
-from sklearn.pipeline import Pipeline
+import statsmodels.api as sm
 
 
 def prepare_salary_increase_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -176,10 +171,6 @@ def welch_ttest_salary_increase(summary: pd.DataFrame, column="salary_increase")
     }
 
 
-import plotly.express as px
-import pandas as pd
-
-
 def create_scatter_experience_increase(summary: pd.DataFrame):
     """
     Creates a scatter plot of salary increase vs. years of experience, colored by sex.
@@ -206,6 +197,93 @@ def create_scatter_experience_increase(summary: pd.DataFrame):
     )
 
     return fig
+
+import plotly.express as px
+
+def create_salary_increase_by_rank(summary: pd.DataFrame):
+    """
+    Creates a box plot and a violin plot to visualize salary increase distribution by rank.
+    """
+    if summary.empty:
+        return None
+
+    fig = px.box(
+        summary,
+        x="rank_1990",
+        y="salary_increase",
+        color="sex",
+        title="Salary Increase Distribution by Rank (1990)",
+        labels={"rank_1990": "Rank (1990)", "salary_increase": "Salary Increase ($)"},
+        boxmode="group",
+    )
+
+    fig.update_layout(xaxis_title="Rank (1990)", yaxis_title="Salary Increase ($)")
+
+    return fig
+
+
+import plotly.express as px
+
+def create_salary_increase_vs_starting_year(summary: pd.DataFrame):
+    """
+    Creates a line plot of average salary increase by starting year, separated by sex.
+    """
+    if summary.empty:
+        return None
+
+    # Group by starting year and sex, then compute mean salary increase
+    salary_by_start = summary.groupby(["startyr", "sex"])["salary_increase"].mean().reset_index()
+
+    fig = px.line(
+        salary_by_start,
+        x="startyr",
+        y="salary_increase",
+        color="sex",
+        markers=True,
+        title="Average Salary Increase vs. Starting Year by Sex",
+        labels={"startyr": "Starting Year", "salary_increase": "Average Salary Increase ($)", "sex": "Sex"},
+    )
+
+    fig.update_layout(
+        xaxis_title="Starting Year",
+        yaxis_title="Average Salary Increase ($)",
+        legend_title="Sex"
+    )
+
+    return fig
+
+
+
+
+
+def create_pct_salary_increase_vs_initial_salary(summary: pd.DataFrame):
+    """
+    Creates an overlapping histogram with salary_1990 on the x-axis and 
+    percentage salary increase on the y-axis, separated by sex.
+    """
+    if summary.empty:
+        return None
+
+    fig = px.histogram(
+        summary,
+        x="salary_1990",
+        y="pct_increase",
+        color="sex",
+        histfunc="avg",  # Aggregates percentage increase by salary bins
+        barmode="overlay",  # Overlapping bars
+        opacity=0.9,  # Adjust opacity for better visualization
+        title="Histogram: Initial Salary (1990) vs. Percentage Increase",
+        labels={"salary_1990": "Initial Salary (1990) ($)", "pct_increase": "Avg Percentage Increase (%)", "sex": "Sex"},
+    )
+
+    fig.update_layout(
+        xaxis_title="Initial Salary (1990) ($)", 
+        yaxis_title="Average Percentage Increase (%)",
+        bargap=0.15  # Adjust bar spacing for better separation
+    )
+
+    return fig
+
 
 
 def create_salary_comparison_plot(summary: pd.DataFrame):
@@ -274,88 +352,100 @@ def prepare_data_for_modeling(summary: pd.DataFrame, target="salary_increase"):
 
 def build_and_run_salary_model(X: pd.DataFrame, y: pd.Series, selected_features: list):
     """
-    Builds and fits a scikit-learn linear regression pipeline with the selected features.
-    Returns the pipeline, predictions, and model statistics.
+    Builds and fits a statsmodels OLS regression with the selected features.
+    Returns the fitted model with full statistical results.
     """
     X_model = X[selected_features].copy()
 
-    # Split features into categorical and numerical
+    # Identify categorical and numerical columns
     cat_cols = [col for col in selected_features if X_model[col].dtype == object]
-    num_cols = [
-        col
-        for col in selected_features
-        if X_model[col].dtype != object and col != "is_female"
-    ]
+    num_cols = [col for col in selected_features if X_model[col].dtype != object]
 
-    # Special handling for binary sex variable
-    binary_cols = ["is_female"] if "is_female" in selected_features else []
-
-    # Create transformers list
-    transformers = []
+    # Convert categorical columns into dummy variables (one-hot encoding, drop first level)
     if cat_cols:
-        transformers.append(
-            ("cat", OneHotEncoder(drop="first", sparse_output=False), cat_cols)
-        )
-    if num_cols:
-        transformers.append(("num", StandardScaler(), num_cols))
-    # Don't transform binary variables
-    if binary_cols:
-        transformers.append(("bin", "passthrough", binary_cols))
+        X_model = pd.get_dummies(X_model, columns=cat_cols, drop_first=True)
 
-    preprocessor = ColumnTransformer(transformers=transformers, remainder="drop")
+    # Add intercept manually (since statsmodels does not add it by default)
+    X_model = sm.add_constant(X_model)
 
-    pipe = Pipeline([("preprocessor", preprocessor), ("linreg", LinearRegression())])
+    # Fit OLS model
+    model = sm.OLS(y, X_model).fit()
 
-    pipe.fit(X_model, y)
-    preds = pipe.predict(X_model)
-
-    # Calculate R-squared
-    r2 = pipe.score(X_model, y)
-
-    # Calculate Adjusted R-squared
-    n = X_model.shape[0]
-    p = len(pipe.named_steps["linreg"].coef_) + 1  # Add 1 for intercept
-    adjusted_r2 = 1 - ((1 - r2) * (n - 1) / (n - p - 1))
-
-    # Calculate Mean Absolute Error
-    mae = np.mean(np.abs(y - preds))
-
-    # Calculate Residual Standard Error
-    residuals = y - preds
-    rse = np.sqrt(np.sum(residuals**2) / (n - p))
-
-    return (
-        pipe,
-        preds,
-        {"r2": r2, "adjusted_r2": adjusted_r2, "mae": mae, "rse": rse, "n": n, "p": p},
-    )
+    return model
 
 
-def plot_feature_importances(pipe: Pipeline, X: pd.DataFrame, selected_features: list):
+def plot_feature_importances(model):
     """
-    Plots the linear regression coefficients as a bar chart using Plotly.
+    Plots the feature importances (coefficients) from a fitted statsmodels OLS model.
+
+    Parameters:
+    - model: A fitted statsmodels OLS regression model.
+
+    Returns:
+    - Plotly figure showing feature importance.
     """
-    linreg = pipe.named_steps["linreg"]
-    preprocessor = pipe.named_steps["preprocessor"]
-    feature_names = preprocessor.get_feature_names_out(selected_features)
+    # Extract coefficients and feature names directly from the model
+    coef_df = pd.DataFrame({"feature": model.params.index, "coef": model.params.values})
 
-    coefs = linreg.coef_.flatten()
-    coef_df = pd.DataFrame({"feature": feature_names, "coef": coefs}).sort_values(
-        "coef", ascending=False
-    )
+    # Sort features by absolute importance
+    coef_df = coef_df.sort_values("coef", ascending=False)
 
+    # Create a horizontal bar plot
     fig = px.bar(
-        coef_df, x="coef", y="feature", orientation="h", title="Feature Coefficients"
+        coef_df,
+        x="coef",
+        y="feature",
+        orientation="h",
+        title="Feature Importance (Linear Regression Coefficients)",
     )
 
+    # Improve layout
     fig.update_layout(
         xaxis_title="Coefficient",
         yaxis_title="Feature",
-        yaxis=dict(autorange="reversed"),
+        yaxis=dict(autorange="reversed"),  # Highest impact at top
+        coloraxis_showscale=False,  # Hide color bar for cleaner look
+        template="plotly_white",
     )
 
     return fig
 
+def build_and_run_salary_model_with_interactions(X: pd.DataFrame, y: pd.Series, selected_features: list, interaction_terms: list):
+    """
+    Builds and fits a statsmodels OLS regression model with interaction terms.
+
+    Parameters:
+    - X: DataFrame of features
+    - y: Target variable (salary increase)
+    - selected_features: List of features to include in the model
+    - interaction_terms: List of tuples specifying interaction terms, e.g., [('sex', 'rank_1995'), ('sex', 'admin')]
+
+    Returns:
+    - Fitted statsmodels OLS model
+    """
+    X_model = X[selected_features].copy()
+
+    # Identify categorical and numerical columns
+    cat_cols = [col for col in selected_features if X_model[col].dtype == object]
+    num_cols = [col for col in selected_features if X_model[col].dtype != object]
+
+    # Convert categorical columns into dummy variables (one-hot encoding, drop first level)
+    if cat_cols:
+        X_model = pd.get_dummies(X_model, columns=cat_cols, drop_first=True)
+
+    # Create interaction terms
+    for feature1, feature2 in interaction_terms:
+        if feature1 in X_model.columns and feature2 in X_model.columns:
+            interaction_term = f"{feature1}_x_{feature2}"
+            X_model[interaction_term] = X_model[feature1] * X_model[feature2]
+
+    # Add intercept manually (since statsmodels does not add it by default)
+    X_model = sm.add_constant(X_model)
+
+    # Fit OLS model
+    model = sm.OLS(y, X_model).fit()
+
+    return model
 
 def analyze_salary_increase_bias(summary: pd.DataFrame):
     """
