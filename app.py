@@ -10,7 +10,6 @@ import promotions_analysis as pa
 import salary_bias_analysis as sba
 
 
-
 # --------------------------------------------------------------------
 # Streamlit Page Configuration
 # --------------------------------------------------------------------
@@ -1257,89 +1256,6 @@ elif selected_tab == "Starting Salaries":
     outcome = ss_filtered_yr[['salary_norm']].astype(float)
     pred_w_intercept = sm.add_constant(pred)
 
-
-    #Run regression
-    model = sm.OLS(outcome, pred_w_intercept).fit(cov_type='HC0')
-
-    # Create summary dataframe
-    model_results = pd.DataFrame(
-    {
-        "Variable": model.params.index,
-        "Coefficient": model.params.values,
-        "Std Error": model.bse.values,
-        "p-value": model.pvalues.values,
-        "95% CI Lower": model.conf_int()[0],
-        "95% CI Upper": model.conf_int()[1],
-    }
-    )
-
-    # Format numeric columns
-    for col in ["Coefficient", "Std Error", "p-value", "95% CI Lower", "95% CI Upper"]:
-        model_results[col] = model_results[col].round(4)
-
-    # Add significance indicator
-    model_results["Significance"] = model_results["p-value"].apply(
-        lambda p: (
-            "***" if p < 0.001 else ("**" if p < 0.01 else ("*" if p < 0.05 else "ns"))
-        )
-    )
-
-    st.markdown("**Starting Salary Model Results**")
-    st.dataframe(model_results)
-    
-    st.markdown(
-    """
-    **Key Assumptions:**
-    - Linear relationships between predictors and salary increases.
-    - Independence of observations.
-    - Normally distributed residuals.
-    
-    **Notes:** 
-    - We used robust standard errors, so homoscedasticity (constant variance of residuals) is not assumed.
-    - The coefficient for 'sex_bool' is particularly important as it represents the estimated effect of 
-      gender on salary increases after controlling for other factors. This variable is 1 for female faculty
-      members and 0 for male faculty.
-    """
-    ) 
-
-    # --- Section D: Change Over Time Model with Interaction Term ---
-    st.subheader("D) Linear Regression Model for Change Over Time ")
-
-    st.markdown(
-    """
-    How has the sex disparity in starting salaries changed over the years? Has it improved over time? To 
-    answer these questions, we ran another regression model with a Sex x Time interaction term. This tells
-    
-    
-    **Variables in our model:**
-    - **Outcome**: Normalized monthly salary
-    - **Predictor of Interest**: Sex (sex_bool, female=1, male=0)
-    - **Control variables**: Field, years of experience (calculated as years since highest degree), degree
-        type, administrative duties, current year, sex * current year
-    """
-    )
-    st.markdown("**Select Model Features:**")
-    int_possible_features = [
-        'sex_bool', 
-        'yr_adj_1975',
-        'sex_year_1975',
-        'yrs_experience', 
-        'field_arts', 
-        'field_prof', 
-        'admin', 
-        'deg_prof'
-    ]
-    
-    int_default_feats = int_possible_features.copy()
-    int_selected_features = st.multiselect(
-        "Features to Include:", options=int_possible_features, default=int_default_feats
-    )
-
-    if len(int_selected_features) == 0:
-        st.warning("Please select at least one feature.")
-        st.stop()
-
-
     #Run regression
     model = sm.OLS(outcome, pred_w_intercept).fit(cov_type='HC0')
 
@@ -1598,7 +1514,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
 
     # --- Section D: Scatter Plots ---
     st.subheader("D) Relationship Visualizations")
-
     salary_comp = sba.create_salary_comparison_plot(summary_field)
     if salary_comp is None:
         st.warning("Not enough data for salary comparison plot.")
@@ -1616,9 +1531,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
         - There is a clear difference in the salary distributions between men and women.
         """
         )
-
-
-
     col1, col2 = st.columns(2)
 
     with col1:
@@ -1633,11 +1545,9 @@ elif selected_tab == "Salary Increases (1990-1995)":
             - This plot shows how salary increases relate to years of experience.
             - Trend lines help identify if the experience-increase relationship differs by sex.
 
-
             
              **Observation:**
             - No linear relationship visible.
-
             """
             )
 
@@ -1646,7 +1556,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
         if scatter_exp is None:
             st.warning("Not enough data for experience scatter plot.")
         else:
-
             st.plotly_chart(scatter_exp, use_container_width=True)
             st.markdown(
                 """
@@ -1702,28 +1611,12 @@ elif selected_tab == "Salary Increases (1990-1995)":
     st.subheader("F) Linear Regression Models for Salary Increases")
 
     # Prepare Data
-
-            st.plotly_chart(salary_comp, use_container_width=True)
-            st.markdown(
-                """
-            **Interpretation:**
-            - Points above the dashed line received salary increases.
-            - The slope of each trend line indicates the average growth rate.
-            - Different slopes by sex suggest potential bias in salary growth.
-            """
-            )
-
-    # --- Section E: Advanced Linear Regression Model ---
-    st.subheader("E) Linear Regression Models for Salary Increases")
-
-
     X_all, y_all, feature_cols = sba.prepare_data_for_modeling(summary_field)
     if X_all.empty or len(y_all) < 5:
         st.warning("Insufficient data for modeling.")
         st.stop()
 
     # Feature Selection
-
     st.markdown("**Select Model Features:**")
     possible_features = [
         "is_female",
@@ -1738,10 +1631,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
 
     selected_features = st.multiselect(
         "Features to Include:", options=possible_features, default=possible_features
-
-    default_feats = possible_features.copy()
-    selected_features = st.multiselect(
-        "Features to Include:", options=possible_features, default=default_feats
     )
 
     if len(selected_features) == 0:
@@ -1767,7 +1656,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
     )
 
     # Target Variable Selection
-
     target_options = {
         "Absolute Increase ($)": "salary_increase",
         "Percentage Increase (%)": "pct_increase",
@@ -1848,48 +1736,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
     )
 
 
-    X_all, y_all, _ = sba.prepare_data_for_modeling(summary_field, target=target_col)
-
-    pipe, preds, stats = sba.build_and_run_salary_model(X_all, y_all, selected_features)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.write("**Model Statistics:**")
-        st.write(f"R-squared: {stats['r2']:.4f}")
-        st.write(f"Adjusted R-squared: {stats['adjusted_r2']:.4f}")
-        st.write(f"Mean Absolute Error: {stats['mae']:.2f}")
-        st.write(f"Residual Standard Error: {stats['rse']:.2f}")
-        st.write(f"Number of Observations: {stats['n']}")
-        st.write(f"Number of Parameters: {stats['p']}")
-
-    with col2:
-        st.markdown(
-            """
-        **Model Interpretation:**
-        - R-squared indicates the proportion of variance explained by the model.
-        - The coefficient for 'is_female' shows the effect of gender after controlling for other variables.
-        - Negative coefficient for 'is_female' suggests women received smaller increases than men, all else equal.
-        """
-        )
-
-    st.markdown("**Regression Coefficients:**")
-    coef_fig = sba.plot_feature_importances(pipe, X_all, selected_features)
-    st.plotly_chart(coef_fig, use_container_width=True)
-
-    st.info(
-        """
-    **Key Assumptions:**
-    - Linear relationships between predictors and salary increases.
-    - Independence of observations.
-    - Homoscedasticity (constant variance of residuals).
-    - Normally distributed residuals.
-    
-    **Note:** The coefficient for 'is_female' is particularly important as it represents 
-    the estimated effect of gender on salary increases after controlling for other factors.
-    """
-    )
-
     # --- Section F: Comprehensive Analysis ---
     st.subheader("F) Comprehensive Analysis & Conclusion")
 
@@ -1905,7 +1751,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
     st.markdown("### Conclusion:")
     if "conclusion" in analysis_results:
         st.write(analysis_results["conclusion"])
-
     st.markdown(
         """
    The only statistically significant difference is the average percentage increase in salary from 1990 to 1995, 
@@ -1916,7 +1761,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
    The regression analysis consistently finds that the **sex coefficient is not statistically significant** across all linear models—whether simple, multiple, or with interaction terms—indicating that sex alone does not have a meaningful impact on salary increases after accounting for rank, experience, field, and other factors.
     """
     )
-
 
     st.markdown(
         """
@@ -2207,14 +2051,12 @@ elif selected_tab == "Summary of Findings":
     )
     st.markdown(
         """
-
     - No clear statistical evidence of sex bias in the **absolute** value of salary increases from 1990-1995 based on direct comparisons.
 
     - The only statistically significant difference is the average percentage increase in salary from 1990 to 1995, which is **higher** for females. This can be attributed to the **lower** salaries for females in 1990.
     
     - The regression analysis consistently finds that the **sex coefficient is not statistically significant** across all linear models—whether simple, multiple, or with interaction terms—indicating that sex alone does not have a meaningful impact on salary increases after accounting for rank, experience, field, and other factors.
     
-
     """
     )
 
