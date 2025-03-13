@@ -170,10 +170,9 @@ if selected_tab == "Introduction":
 
     ## Acknowledgments
 
-    - **Data & Research Questions**: Provided by Professor Scott Emerson.  
-    - **Project Context**: Developed within the framework of an applied statistics course, guided 
-      by Professor Katie Wilson’s instruction.  
-    - **Team Collaboration**: Carried out by a group of students, each contributing to data preparation, analysis, and interpretation. The team includes Kyle Cullen Bretherton, Aravindh Manavalan, Richard Pallangyo, Akshay Ravi, and Vijay Balaji S
+    - **Data & Research Questions**: Provided by Professor Scott Emerson.
+    - **Project Context**: Developed within the framework of an applied statistics course, guided by Professor Katie Wilson’s instruction.
+    - **Team Collaboration**: Collaboration between team members each contributing to data preparation, analysis, and interpretation. The team includes Kyle Cullen Bretherton, Aravindh Manavalan, Richard Pallangyo, Akshay Ravi, and Vijay Balaji S.
 
     ---
 
