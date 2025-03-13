@@ -89,7 +89,10 @@ def create_salary_increase_boxplot(summary: pd.DataFrame):
         title="Salary Increase (1990-1995) by Sex",
         labels={"salary_increase": "Salary Increase ($)", "sex": "Sex"},
     )
-    fig.update_layout(xaxis_title="Sex", yaxis_title="Salary Increase ($)")
+    fig.update_layout(xaxis_title="Sex", yaxis_title="Salary Increase ($)",plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6")
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
     return fig
 
 
@@ -108,7 +111,11 @@ def create_pct_increase_boxplot(summary: pd.DataFrame):
         title="Percentage Salary Increase (1990-1995) by Sex",
         labels={"pct_increase": "Percentage Increase (%)", "sex": "Sex"},
     )
-    fig.update_layout(xaxis_title="Sex", yaxis_title="Percentage Increase (%)")
+    fig.update_layout(xaxis_title="Sex", yaxis_title="Percentage Increase (%)", plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6")
+
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
     return fig
 
 
@@ -193,8 +200,12 @@ def create_scatter_experience_increase(summary: pd.DataFrame):
     )
 
     fig.update_layout(
-        xaxis_title="Years of Experience", yaxis_title="Salary Increase ($)"
+        xaxis_title="Years of Experience", yaxis_title="Salary Increase ($)",
+        plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6"
     )
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
 
     return fig
 
@@ -217,7 +228,11 @@ def create_salary_increase_by_rank(summary: pd.DataFrame):
         boxmode="group",
     )
 
-    fig.update_layout(xaxis_title="Rank (1990)", yaxis_title="Salary Increase ($)")
+    fig.update_layout(xaxis_title="Rank (1990)", yaxis_title="Salary Increase ($)"
+        ,plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6")
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
 
     return fig
 
@@ -247,8 +262,12 @@ def create_salary_increase_vs_starting_year(summary: pd.DataFrame):
     fig.update_layout(
         xaxis_title="Starting Year",
         yaxis_title="Average Salary Increase ($)",
-        legend_title="Sex"
+        legend_title="Sex",
+        plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6"
     )
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
 
     return fig
 
@@ -280,7 +299,11 @@ def create_pct_salary_increase_vs_initial_salary(summary: pd.DataFrame):
         xaxis_title="Initial Salary (1990) ($)", 
         yaxis_title="Average Percentage Increase (%)",
         bargap=0.15  # Adjust bar spacing for better separation
+        ,plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6"
     )
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
 
     return fig
 
@@ -319,7 +342,11 @@ def create_salary_comparison_plot(summary: pd.DataFrame):
         )
     )
 
-    fig.update_layout(xaxis_title="1990 Salary ($)", yaxis_title="1995 Salary ($)")
+    fig.update_layout(xaxis_title="1990 Salary ($)", yaxis_title="1995 Salary ($)",
+        plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6")
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
     return fig
 
 
@@ -406,7 +433,11 @@ def plot_feature_importances(model):
         yaxis=dict(autorange="reversed"),  # Highest impact at top
         coloraxis_showscale=False,  # Hide color bar for cleaner look
         template="plotly_white",
+        plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6"
     )
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
 
     return fig
 
