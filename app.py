@@ -38,7 +38,6 @@ selected_tab = st.sidebar.radio(
     tab_options,
     index=tab_options.index(st.session_state.selected_tab),
 )
-# st.session_state.selected_tab = selected_tab
 
 # --------------------------------------------------------------------
 # Data Loading
@@ -59,70 +58,147 @@ def load_data(file_path="salary.txt"):
 data = load_data()
 
 # --------------------------------------------------------------------
-# Render Content Based on the Selected Tab
+# Introduction Tab
 # --------------------------------------------------------------------
 if selected_tab == "Introduction":
     st.header("Introduction and Background")
 
     st.markdown(
         """
-    **Project Overview:**  
-    This project analyzes faculty salary data from a US university in 1995 to investigate 
-    potential differences between male and female faculty, focusing on multiple questions.
+    ## Project Overview
 
-    **Background & Assumptions:**  
-    - Faculty data are assumed independent, though real-world confounders (e.g., teaching evaluations, research productivity) are not fully captured.
-    - We focus on group-level differences in promotions.
-    - We interpret differences in promotion rates or time-to-promotion as potential sex bias, though causation cannot be established.
+    Welcome! This project examines faculty salary data from a U.S. university during the years 1976–1995, 
+    with a focus on salary records from 1995. We’re investigating whether men and women differ in 
+    how much they earn, how their salaries grow, and how quickly they get promoted. By applying 
+    various statistical techniques—including regression, t-tests, Kaplan-Meier survival analysis, 
+    and logistic regression—we aim to identify whether any gender-based disparities persist after 
+    accounting for key factors like field, rank, and years of experience.
 
-    **Dataset Description:**  
-    - The dataset includes:  
-      `case, id, sex, deg, yrdeg, field, startyr, year, rank, admin, salary`
-    - Each row corresponds to a faculty member in a given year (1976-1995).
+    ---
+
+    ## Why Study This?
+
+    Gender-based pay discrepancies in U.S. higher education have been documented extensively. 
+    Though it’s illegal to discriminate by sex, salary differences could also arise from legitimate 
+    factors such as:
+    - **Field of specialization** (e.g., Business vs. Arts)
+    - **Experience** (years since highest degree)
+    - **Administrative roles** (like department chair)
+    - **Rank** (Assistant, Associate, or Full Professor)
+
+    There’s also the question of *when* promotions happen—particularly from Associate to Full 
+    Professor, which is not bound by the strict timeline that governs promotion from Assistant 
+    to Associate. In short, a faculty member’s rank and salary could hinge on many legitimate 
+    influences, making it challenging to determine if any observed differences are due to bias 
+    or simply reflect those legitimate factors.
+
+    ---
+
+    ## Questions of Interest
+
+    Specifically, our project tackles four questions related to potential sex bias in this institution:
+
+    1. **1995 Sex Bias:**  
+       Are there salary differences between men and women in the most recent year (1995), and if so, 
+       how big are those differences once we factor in rank, field, and other variables?
+
+    2. **Starting Salaries:**  
+       Have men and women historically started at different salary levels when first hired? 
+       Have these differences shifted over time?
+
+    3. **Salary Increases (1990–1995):**  
+       Looking at the salaries of faculty who worked both in 1990 and 1995, does sex play a role 
+       in how much raises have grown?
+
+    4. **Promotions (Associate to Full):**  
+       Does one sex tend to be promoted more often—or more quickly—from Associate to Full Professor?
+
+    ---
+
+    ## Data Highlights
+
+    The dataset (excluding medical school faculty) includes:
+    - **1597** faculty members employed in 1995  
+    - **Yearly salary records** from 1976 to 1995 (total of 19,792 records)  
+    - Variables covering sex, degree type, year of highest degree, field, start year, rank, 
+      administrative duties, and the actual monthly salary.
+
+    Each row corresponds to a faculty member’s annual record. For instance, if someone taught 
+    continuously from 1980 to 1995, you would see multiple entries for that person—one for 
+    each year.
+
+    **Important Points to Consider**  
+    - Salaries in different fields may vary significantly (e.g., engineering vs. humanities).  
+    - Promotion from Assistant to Associate typically occurs around the sixth year, while promotion 
+      from Associate to Full can happen at any time.  
+    - We do not have data on productivity measures (like number of publications or grants), so any 
+      differences we see by sex cannot automatically be attributed to discrimination.
+
+    ---
+
+    ## Analytical Approach
+
+    Our methods combine both straightforward and advanced techniques:
+    
+    - **Descriptive Statistics & Visualization**: Basic summaries and plots to see how salaries 
+      differ by sex, rank, and field.  
+    - **T-tests & Proportion Tests**: Quick checks to see if differences in means or promotion 
+      rates are statistically significant.  
+    - **Multiple Linear Regression**: Investigates factors influencing salaries (e.g., field, rank, 
+      years since degree) and how much of the gap remains after controlling for these factors.  
+    - **Kaplan-Meier Survival Analysis**: Looks at time-to-promotion from Associate to Full rank, 
+      comparing men and women.  
+    - **Logistic Regression**: Estimates the likelihood of being promoted or underpaid, controlling 
+      for relevant covariates like experience or administrative roles.
+
+    ---
+
+    ## Moving Through the Analysis
+
+    - **1995 Sex Bias**: First stop—see if salary differences exist in 1995, after adjusting for 
+      rank, field, and experience.  
+    - **Starting Salaries**: Next, look at initial pay across different hiring years to check for 
+      gender-based disparities at the start of employment.  
+    - **Salary Increases (1990–1995)**: Then, dig into raises and see if men and women have 
+      different growth patterns over this five-year period.  
+    - **Promotions (Associate to Full)**: Finally, investigate whether gender impacts promotion 
+      rates and timing.  
+    - **Summary of Findings**: Wrap it all up with our key takeaways and reflections on any 
+      potential biases we uncovered.
+
+    ---
+
+    ## Acknowledgments
+
+    - **Data & Research Questions**: Provided by Professor Scott Emerson.  
+    - **Project Context**: Developed within the framework of an applied statistics course, guided 
+      by Professor Katie Wilson’s instruction.  
+    - **Team Collaboration**: Carried out by a group of students, each contributing to data preparation, analysis, and interpretation. The team includes Kyle Cullen Bretherton, Aravindh Manavalan, Richard Pallangyo, Akshay Ravi, and Vijay Balaji S
+
+    ---
+
+    ## Important Caveats
+
+    1. **Missing Factors**: We don’t have measures of individual productivity (like publications 
+       or grants), which could partially explain salary or promotion outcomes.  
+    2. **Historical Context**: The dataset ends in 1995; findings might not apply to current 
+       policies or practices.  
+    3. **Interpretation**: A remaining salary gap linked to sex after controlling for rank, field, 
+       etc., is *suggestive* of bias, but it’s not absolute proof.  
+    4. **Sample Limitations**: When you break data down by field or rank, sample sizes can shrink, 
+       which affects how confidently we can generalize certain conclusions.
+
+    In short, **correlation does not imply causation**. However, persistent unexplained differences 
+    in salary or promotion between men and women—across various measures—are still red flags 
+    that warrant further inquiry.
+
+    Let’s dive in!
     """
     )
 
-elif selected_tab == "Question 1: 1995 Sex Bias":
-    st.markdown(
-        """
-        **Project Overview:**  
-        In this team project, we analyze faculty salary data from a U.S. university to explore whether there are differences in average salary and career outcomes between men and women. The overarching goal is to determine whether sex bias exists and to describe the magnitude and nature of its effect.
-
-        **Background:**  
-        Despite legal protections against discrimination, studies have consistently found differences in salaries and promotion outcomes across genders in academia. These disparities may arise from various factors such as differences in experience, educational attainment, field of study, administrative roles, and productivity. By examining the data at a group level, we aim to uncover potential sex biases that could explain these differences.
-
-        **Questions of Interest:**  
-        The project addresses several key questions:
-        1. Does sex bias exist in the university in 1995?
-        2. Are starting salaries different between male and female faculty?
-        3. Have salary increases between 1990 and 1995 been influenced by sex?
-        4. Has sex bias existed in granting promotions from Associate to Full Professor?
-
-        **Methodology:**  
-        We use a combination of statistical analysis, Kaplan-Meier survival analysis, and logistic regression to address these questions.
-
-        **Dataset Description:**  
-        - **Source:** Faculty salary data from a U.S. university in 1995 (excluding medical school faculty).  
-        - **Timeframe:** Data spans from 1976 to 1995, capturing monthly salary records and additional demographic and professional information.  
-            - **Variables Include:**  
-            - **case, id:** Unique identifiers.  
-            - **sex:** 'M' (male) or 'F' (female).  
-            - **deg:** Highest degree attained (PhD, Prof, or Other).  
-            - **yrdeg:** Year of highest degree attainment.  
-            - **field:** Faculty field (Arts, Prof, or Other).  
-            - **startyr:** Year in which the faculty member was hired.  
-            - **year:** Record year.  
-            - **rank:** Academic rank (Assistant, Associate, or Full).  
-            - **admin:** Indicator of administrative duties (1 = yes, 0 = no).  
-            - **salary:** Monthly salary in dollars.
-
-        **Acknowledgements:**  
-        - The dataset and research questions for this project were provided by Professor Scott Emerson.
-        - We also extend our sincere gratitude to our course instructor, Professor Katie Wilson, for their guidance and support throughout this project. 
-        - Team members: Kyle Cullen Bretherton, Aravindh Manavalan, Richard Pallangyo, Akshay Ravi, and Vijay Balaji S
-        """
-    )
-
+# -----------------------------------------------------------------
+# Question 1: Does Sex Bias Exist at the University in 1995?
+# -----------------------------------------------------------------
 elif selected_tab == "1995 Sex Bias":
 
     st.header("Question 1: Does Sex Bias Exist at the University in 1995?")
@@ -305,6 +381,9 @@ elif selected_tab == "1995 Sex Bias":
             color="sex",
             labels={"rank": "Rank", "salary": "Monthly Salary", "sex": "Sex"},
         )
+        fig1.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+        fig1.update_xaxes(showgrid=True, gridcolor='lightgray')
+        fig1.update_yaxes(showgrid=True, gridcolor='lightgray')
         st.plotly_chart(fig1, use_container_width=True)
 
         st.markdown(
@@ -338,6 +417,10 @@ elif selected_tab == "1995 Sex Bias":
                 "sex": "Sex",
             },
         )
+        fig2.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+        fig2.update_xaxes(showgrid=True, gridcolor='lightgray')
+        fig2.update_yaxes(showgrid=True, gridcolor='lightgray')
+
         st.plotly_chart(fig2, use_container_width=True)
 
         st.markdown(
@@ -386,6 +469,12 @@ elif selected_tab == "1995 Sex Bias":
                         y="gap_percent",
                         labels={"field": "Field", "gap_percent": "Gap (%)"},
                     )
+                    fig3.update_layout(
+                        plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6"
+                    )
+                    fig3.update_xaxes(showgrid=True, gridcolor='lightgray')
+                    fig3.update_yaxes(showgrid=True, gridcolor='lightgray')
+
                     st.plotly_chart(fig3, use_container_width=True)
 
                     st.markdown(
@@ -419,6 +508,12 @@ elif selected_tab == "1995 Sex Bias":
                     labels={"sex": "Sex", "salary": "Average Monthly Salary"},
                     title=f"Average Salary by Sex in {selected_field} Field",
                 )
+                fig3.update_layout(
+                    plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6"
+                )
+                fig3.update_xaxes(showgrid=True, gridcolor='lightgray')
+                fig3.update_yaxes(showgrid=True, gridcolor='lightgray')
+
                 st.plotly_chart(fig3, use_container_width=True)
 
                 # Calculate gap
@@ -458,6 +553,12 @@ elif selected_tab == "1995 Sex Bias":
             barmode="overlay",
             labels={"log_salary": "Log Monthly Salary", "sex": "Sex"},
         )
+        fig4.update_layout(
+            plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6"
+        )
+        fig4.update_xaxes(showgrid=True, gridcolor='lightgray')
+        fig4.update_yaxes(showgrid=True, gridcolor='lightgray')
+
         st.plotly_chart(fig4, use_container_width=True)
 
         st.markdown(
@@ -556,7 +657,14 @@ elif selected_tab == "1995 Sex Bias":
             "sex": "Sex",
         },
     )
+
+    fig_residual.update_layout(
+        plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6"
+    )
+    fig_residual.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig_residual.update_yaxes(showgrid=True, gridcolor='lightgray')
     fig_residual.add_hline(y=0, line_dash="dash", line_color="black")
+
     st.plotly_chart(fig_residual, use_container_width=True)
 
     # Interpret the female coefficient
@@ -573,7 +681,7 @@ elif selected_tab == "1995 Sex Bias":
     if female_pval < 0.05:
         if percent_effect < 0:
             effect_interpretation = f"After controlling for rank, field, experience, degree, and administrative duties, women earn approximately {abs(percent_effect):.1f}% less than similarly qualified men (95% CI: {percent_ci_lower:.1f}% to {percent_ci_upper:.1f}%, p={female_pval:.4f})."
-            st.error(effect_interpretation)
+            st.info(effect_interpretation)
             st.markdown(
                 """
             **This statistically significant difference suggests potential sex bias in faculty salaries.**
@@ -720,6 +828,10 @@ elif selected_tab == "1995 Sex Bias":
         ).data
     )
 
+    fig_compare.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+    fig_compare.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig_compare.update_yaxes(showgrid=True, gridcolor='lightgray')
+
     # Update legend
     fig_compare.data[2].name = "Male trend (actual)"
     fig_compare.data[3].name = "Female trend (actual)"
@@ -748,6 +860,10 @@ elif selected_tab == "1995 Sex Bias":
         opacity=0.7,
         labels={"percent_diff": "% Difference from Expected Salary", "sex": "Sex"},
     )
+
+    fig_diff.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+    fig_diff.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig_diff.update_yaxes(showgrid=True, gridcolor='lightgray')
 
     st.plotly_chart(fig_diff, use_container_width=True)
 
@@ -840,6 +956,10 @@ elif selected_tab == "1995 Sex Bias":
         opacity=0.7,
         labels={"salary_residual": "Log Salary Residual", "sex": "Sex"},
     )
+
+    fig5.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+    fig5.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig5.update_yaxes(showgrid=True, gridcolor='lightgray')
 
     # Add vertical line at threshold
     fig5.add_vline(x=threshold, line_dash="dash", line_color="red")
@@ -1034,6 +1154,10 @@ elif selected_tab == "1995 Sex Bias":
     """
     )
 
+
+#  -----------------------------------------------------------------------------
+#  Question 2: Has Sex Bias Existed in Starting Salaries?
+#  -----------------------------------------------------------------------------
 elif selected_tab == "Starting Salaries":
     st.header("Question 2: Has Sex Bias Existed in Starting Salaries?")
     st.markdown(
@@ -1056,10 +1180,7 @@ elif selected_tab == "Starting Salaries":
     - Adding new fields for years since degree, as well as an interaction term between sex and time
     """
     )
-    import matplotlib.pyplot as plt
-    import matplotlib.ticker as ticker
-    import seaborn as sns
-    
+
     def prepare_starting_salary_data(df):
         #Filter for only employees hired in the current year at the Assistant level (and also remove some other
         #types of data that would mess with the analysis
@@ -1154,7 +1275,11 @@ elif selected_tab == "Starting Salaries":
         title=f"Starting Salary ({start_year}-{end_year}) by Sex",
         labels={"salary": "Starting Salary ($)", "sex": "Sex"},
     )
-    q2_box.update_layout(xaxis_title="Sex", yaxis_title="Starting Salary ($)")
+    q2_box.update_layout(xaxis_title="Sex", yaxis_title="Starting Salary ($)",
+                         plot_bgcolor="#e5ecf6",
+                         paper_bgcolor="#e5ecf6")
+    q2_box.update_xaxes(showgrid=True, gridcolor='lightgray')
+    q2_box.update_yaxes(showgrid=True, gridcolor='lightgray')
     if q2_box is None:
         st.warning("Not enough data for box plot.")
     else:
@@ -1165,21 +1290,35 @@ elif selected_tab == "Starting Salaries":
     
     #Plot of average starting salaries by sex and year
     # Create the plot
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(data=avg_salary, x='yr_full', y='salary', hue='sex', marker='o')
+    fig = px.line(
+        avg_salary, 
+        x='yr_full', 
+        y='salary', 
+        color='sex',
+        markers=True,
+        title='Average Starting Salary by Sex and Year'
+    )
 
-    # Add title and labels
-    plt.title('Average Starting Salary by Sex and Year', fontsize=16)
-    plt.xlabel('Year', fontsize=12)
-    plt.ylabel('Average Starting Salary', fontsize=12)
+    fig.update_layout(
+        xaxis_title='Year',
+        yaxis_title='Average Starting Salary',
+        template='plotly_white',  # Gives a clean look
+        legend_title_text='Sex',
+        width=800,                
+        height=600,
+        plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6"               
+    )
+    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
 
-    # Format x-axis ticks to show as whole years with '19' prefix
-    plt.gca().xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+    # If you want to ensure the x-axis only shows integer years:
+    fig.update_xaxes(
+        tickmode='linear',
+        dtick=1  # Show every year if you want an annual tick
+    )
 
-    # Show the plot
-    plt.legend(title='Sex')
-    plt.grid(True)
-    st.pyplot(plt)
+    st.plotly_chart(fig, use_container_width=True)
 
     # Normalize salaries by dividing them by average male starting salary in the current year
     #Use these values to calculate unadjusted starting salary percentage gap
@@ -1409,6 +1548,10 @@ elif selected_tab == "Starting Salaries":
     
     """
     )
+
+# -------------------------------------------------------------------------------
+# Question 3: Has Sex Bias Existed in Salary Increases (1990-1995)
+# -------------------------------------------------------------------------------
     
 elif selected_tab == "Salary Increases (1990-1995)":
     st.header("Question 3: Has Sex Bias Existed in Salary Increases (1990-1995)?")
@@ -1772,304 +1915,405 @@ elif selected_tab == "Salary Increases (1990-1995)":
     )
 
 
+# --------------------------------------------------------------------
+# Question 4: Sex Bias in Promotions from Associate to Full Professor
+# --------------------------------------------------------------------
+
 elif selected_tab == "Promotions (Associate to Full)":
-    st.header("""Question 4: Sex Bias in Promotions from Associate to Full Professor""")
+    st.header("Question 4: Sex Bias in Promotions from Associate to Full Professor")
+
+    # --------------------------------------------------------------------
+    # SECTION A: Data Preparation
+    # --------------------------------------------------------------------
     st.markdown(
-        """ 
-   **Objective:** Determine if there is a disparity in promotion rates—and time-to-promotion—by sex.
+        """
+    **Objective**  
+    Determine if there is a disparity in promotion rates—and time-to-promotion—by sex, focusing on 
+    faculty who have reached at least the Associate rank.
+
+    ### A) Data Preparation Steps
+    To prepare our data for this analysis we:  
+    1. Filter rows where `rank` is 'Assoc' or 'Full'.
+    2. Identify the earliest year a faculty member reached Associate (`yr_first_assoc`) 
+       and earliest year they reached Full (`yr_first_full`).
+    3. Merge in demographic and academic variables (field, degree, sex, etc.).
+    4. Determine if they had any administrative duties after first becoming Associate (`admin_any`).
+    5. Create a binary indicator `promoted` (1 = reached Full by 1995, 0 = otherwise).
     """
     )
-    st.markdown("""---""")
 
-    st.header(
-        """
-    Comparing Promotion Rates by Sex: Bar Chart & Statistical Test"""
-    )
-
-    # --- Section A: Data Preparation ---
     summary = pa.prepare_promotion_data(data)
     if summary.empty:
         st.warning("No eligible records found. Check your dataset.")
         st.stop()
 
+    # Field filter
+    st.info("Select a field to view it's promotion data, perform hypothesis tests, and perform survival analysis.")
     field_list = ["All"] + sorted(summary["field"].dropna().unique().tolist())
     selected_field = st.selectbox("Field Filter", field_list, index=0)
+
     if selected_field != "All":
         summary_field = summary[summary["field"] == selected_field].copy()
     else:
         summary_field = summary.copy()
+
     if summary_field.empty:
-        st.warning("No records after applying field filter.")
+        st.warning("No records found after applying field filter.")
         st.stop()
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(
-            """
-            - **Null Hypothesis (H₀)**: The promotion rate from Associate to Full Professor is the same for men and women.
-            """
-        )
-        # --- Section B: Descriptive Bar Chart ---
-        st.subheader("Promotion Counts by Sex", divider="violet")
-        bar_fig = pa.create_promotion_bar_chart(summary_field)
-        if bar_fig is None:
-            st.warning("Not enough data for bar chart.")
-        else:
-            st.plotly_chart(bar_fig, use_container_width=True)
+    # --------------------------------------------------------------------
+    # SECTION B: Descriptive Analysis — Bar Chart
+    # --------------------------------------------------------------------
+    st.markdown(
+        """
+    ### B) Descriptive Analysis
 
-        cross_tab = pa.welch_two_proportions_test(summary_field)[1]
-        st.dataframe(cross_tab, hide_index=True, use_container_width=True)
-
-    with col2:
-        # --- Section C: Two-Proportion Z-Test ---
-        st.markdown(
-            """
-            - **Alternative Hypothesis (H₁)**: The promotion rate from Associate to Full Professor differs between men and women.
-            """
-        )
-        st.subheader("Two-Proportion Z-Test for Promotion Rates", divider="violet")
-        test_result = pa.welch_two_proportions_test(summary_field)[0]
-        if test_result is None:
-            st.info(
-                "Not enough data for a two-proportion z-test (need both M and F present)."
-            )
-        else:
-            result = {
-                "z_stat": test_result["z_stat"],
-                "p_val": test_result["p_val"],
-                "proportion_men": test_result["proportion_men"],
-                "proportion_women": test_result["proportion_women"],
-                "diff": test_result["diff"],
-                "ci_lower": test_result["ci_lower"],
-                "ci_upper": test_result["ci_upper"],
-            }
-
-            results_df = pd.DataFrame(
-                {
-                    "Statistic": [
-                        "Z-Statistic",
-                        "P-value",
-                        "Men's Promotion Proportion",
-                        "Women's Promotion Proportion",
-                        "Difference (M - F)",
-                        "95% CI",
-                    ],
-                    "Value": [
-                        f"{result['z_stat']:.5f}",
-                        f"{result['p_val']:.5f}",
-                        f"{result['proportion_men']:.5f}",
-                        f"{result['proportion_women']:.5f}",
-                        f"{result['diff']:.5f}",
-                        f"({result['ci_lower']:.5f}, {result['ci_upper']:.5f})",
-                    ],
-                }
-            )
-
-            st.dataframe(results_df, hide_index=True, use_container_width=True)
-            st.info(test_result["p_val_interpretation"])
-            st.info(test_result["ci_interpretation"])
-
-    st.markdown("""---""")
-    # --- Section D: Survival Analysis ---
-    st.subheader(
-        "Kaplan-Meier Analysis of Time-to-Promotion between Men and Women",
-        divider="violet",
+    **Promotion Counts by Sex**  
+    A quick look at how many men vs. women in this subset have successfully made the jump 
+    from Associate to Full Professor.
+    """
     )
+
+
+    st.subheader("Promotion Counts by Sex")
+    bar_fig = pa.create_promotion_bar_chart(summary_field)
+    if bar_fig is None:
+        st.warning("Not enough data for bar chart.")
+    else:
+        st.plotly_chart(bar_fig, use_container_width=True)
+
+    # Show cross-tab results
+    ztest_output = pa.two_proportion_z_test(summary_field)
+    if ztest_output is not None:
+        _, cross_tab = ztest_output
+        st.write("**Counts & Proportions**")
+        st.dataframe(cross_tab, hide_index=True, use_container_width=True)
+    else:
+        st.info("Could not compute cross-tab; possibly only one sex present.")
+
+# --------------------------------------------------------------------
+# SECTION C: Two-Proportion Z-Test
+# --------------------------------------------------------------------
+    st.markdown("### C) Statistical Test of Promotion Rates")
+    st.subheader("Two-Proportion Z-Test for Promotion Rates, at Significance Level = 0.05")
+    st.markdown(
+        """
+    **Hypotheses**  
+    - **Null (H₀)**: Promotion rates (Associate \u2192 Full) are the same for men and women.  
+    - **Alternative (H₁)**: Promotion rates differ by sex.
+
+    The two-proportion z-test checks if the observed difference in promotion rates is 
+    statistically significant.
+    """
+    )
+
+    if ztest_output is None:
+        st.info(
+            "Not enough data to run a two-proportion z-test (need both M and F)."
+        )
+    else:
+        test_result, _ = ztest_output
+        result = {
+            "z_stat": test_result["z_stat"],
+            "p_val": test_result["p_val"],
+            "proportion_men": test_result["proportion_men"],
+            "proportion_women": test_result["proportion_women"],
+            "diff": test_result["diff"],
+            "ci_lower": test_result["ci_lower"],
+            "ci_upper": test_result["ci_upper"],
+        }
+        # Prepare for display
+        results_df = pd.DataFrame(
+            {
+                "Statistic": [
+                    "Z-Statistic",
+                    "P-value",
+                    "Men's Promotion Proportion",
+                    "Women's Promotion Proportion",
+                    "Difference (M - F)",
+                    "95% CI",
+                ],
+                "Value": [
+                    f"{result['z_stat']:.5f}",
+                    f"{result['p_val']:.5f}",
+                    f"{result['proportion_men']:.5f}",
+                    f"{result['proportion_women']:.5f}",
+                    f"{result['diff']:.5f}",
+                    f"({result['ci_lower']:.5f}, {result['ci_upper']:.5f})",
+                ],
+            }
+        )
+        st.dataframe(results_df, hide_index=True, use_container_width=True)
+
+        # Display test interpretations
+        st.info(test_result["p_val_interpretation"])
+        st.info(test_result["ci_interpretation"])
+
+    st.markdown("---")
+
+    # --------------------------------------------------------------------
+    # SECTION D: Kaplan-Meier Survival Analysis
+    # --------------------------------------------------------------------
+    st.markdown("### D) Survival Analysis of Promotion")
+    st.subheader("Kaplan-Meier Analysis of Time-to-Promotion by Sex")
+    st.markdown(
+        """
+    **Why Kaplan-Meier?**  
+    - We treat the time from the first year an individual holds the Associate rank 
+      to the year they become Full (or 1995 if not promoted) as a 'survival' period.  
+    - Kaplan-Meier curves estimate how quickly faculty transition to Full rank.
+    """
+    )
+
     surv_fig = pa.create_survival_analysis(summary_field)
     if surv_fig is None:
-        st.warning("Not enough data or only one sex present for survival analysis.")
+        st.warning("Not enough data or only one sex group available for Kaplan-Meier analysis.")
     else:
         st.plotly_chart(surv_fig, use_container_width=True)
+
         st.info(
             """
-        **Interpretation:**
-
-        - The Kaplan-Meier curves above illustrate how long faculty members typically remain at the Associate rank before promotion, separated by sex (men vs. women).
-        - A curve that declines more rapidly means that faculty from that group are generally promoted sooner.
-        - If one sex consistently shows a faster decline, it suggests that faculty of that sex are promoted to Full Professor more quickly than faculty of the other sex.
-        - Comparing these curves helps us identify whether there is a potential sex bias in the timing of promotions, such as if men are promoted more rapidly than women.
-        """
+            **Interpretation**
+            - A *steep drop* means that group is promoted more rapidly.
+            - If one group’s curve remains higher for longer, they tend to stay in the Associate rank longer than the other group."""
         )
-    st.markdown("""---""")
 
-    # ----------------------------------------------
-    # 3) Logistic Regression
-    # ----------------------------------------------
-    st.subheader("Logistic Regression with Feature Importance", divider="violet")
+    st.markdown("---")
+
+    # --------------------------------------------------------------------
+    # SECTION E: Logistic Regression
+    # --------------------------------------------------------------------
+    st.markdown("### E) Logistic Regression")
+    st.subheader("Logistic Regression: Identifying Promotion Factors")
+
     X_all, y_all, summary_all = pa.prepare_data_for_modeling(summary_field)
     if X_all.empty or y_all.nunique() < 2:
         st.warning("Insufficient variation in data for modeling.")
         st.stop()
 
-    st.markdown("**Select Model Features:**")
-
-    possible_features = ["sex_numeric", "field", "deg_type", "admin_any", "yrdeg_min"]
-    default_feats = possible_features.copy()
+    st.markdown(
+        """
+    **Model Approach**  
+    - **Dependent variable**: 'promoted' (1 if promoted to Full by 1995, 0 otherwise).  
+    - **Predictors**: Choose from sex, field, degree type, administrative role, 
+      years since degree, etc.
+    """
+    )
 
     possible_features = [
-        "sex",  # Categorical
-        "field",  # Categorical
-        "deg_type",  # Categorical
-        "admin_any",  # Numeric (0/1)
-        "yrdeg",  # Numeric
-        "startyr",  # Numeric
-        "salary",  # Numeric
+        "sex",
+        "field",
+        "deg_type",
+        "admin_any",
+        "yrdeg",
+        "startyr",
+        "salary",
     ]
     selected_features = st.multiselect(
-        "Features to Include:", options=possible_features, default=possible_features
+        "Select Features for Logistic Regression Model:",
+        options=possible_features,
+        default=possible_features,
     )
+
     if len(selected_features) == 0:
-        st.warning("Please select at least one feature.")
+        st.warning("Select at least one feature to build the model.")
         st.stop()
 
-    # Build and Run Logistic Regression Pipeline
     pipe, preds, probs = pa.build_and_run_logreg_model(X_all, y_all, selected_features)
     accuracy = (preds == y_all).mean()
-    st.write(f"**Logistic Regression (Training Accuracy):** {accuracy:.3f}")
+    st.write(f"**Model Accuracy (Training Data):** {accuracy:.3f}")
 
-    # Plot coefficients
     coef_fig = pa.plot_feature_importances_logreg(pipe, X_all, selected_features)
     st.plotly_chart(coef_fig, use_container_width=True)
     st.info(
         """
-        **Interpretation:**
-
-        - Each **coefficient** in our logistic regression model indicates how strongly a given feature (or category) affects the likelihood of promotion from Associate to Full Professor, *holding other variables constant*.
-        - A **positive coefficient** implies that faculty members with that characteristic—or those for whom the variable is higher—have *increased* odds of being promoted. For example, if we see **Sex: M** in the feature list with a **positive** coefficient, it suggests that male faculty are more likely to be promoted compared to the baseline category (often female) under similar conditions.
-        - Conversely, a **negative coefficient** means the feature *lowers* the likelihood of promotion. For instance, if **Sex: F** appears with a negative coefficient, it indicates female faculty experience *reduced* odds of being promoted relative to men, assuming the same levels of all other variables (salary, field, degree type, etc.).
-        - The **magnitude** of a coefficient reflects how substantial its impact is. Larger absolute values suggest the feature exerts a stronger influence (positive or negative) on promotion chances.
-        - Critically, these coefficients help us assess potential **sex bias** in promotions. For instance, being female is associated with a **negative coefficient** in our model, while being male is associated with a **positive coefficient**. This observation points toward a disparity favoring men.
+        **How to Read the Coefficients:**
+        - Each bar represents the log-odds coefficient for that predictor or category.  
+        - A **positive** coefficient indicates a predictor is associated with *higher odds* of being promoted.  
+        - A **negative** coefficient means the predictor is associated with *lower odds* of promotion.  
+        - The **magnitude** (length of the bar) reflects how strong that association is.
         """
+    )
+
+    # --------------------------------------------------------------------
+    # SECTION F: Findings & Conclusion
+    # --------------------------------------------------------------------
+    st.markdown("---")
+    st.subheader("Summary of Findings & Conclusions")
+
+    st.markdown(
+        """
+    **Key Takeaways:**
+
+    1. **Promotion Rates (Descriptive & Two-Proportion Test)**  
+       - Men generally show higher promotion counts and proportions from Associate to Full, 
+         though this can vary by field.  
+       - In a two-proportion z-test, the difference in promotion rates often appears statistically 
+         significant (p < 0.05) in many fields, suggesting possible sex-based disparities.  
+
+    2. **Time-to-Promotion (Kaplan-Meier Curves)**  
+       - Men frequently appear to reach Full rank earlier (steeper survival curve decline).  
+       - Women may catch up over longer periods, but the initial gap suggests men receive Full 
+         promotions sooner, on average.
+
+    3. **Logistic Regression**  
+       - When controlling for field, degree type, administrative roles, and other variables, 
+         **being male** often remains positively associated with promotion likelihood.  
+       - Additional factors that increase promotion odds include:  
+         - Holding a PhD (vs. Other degrees)  
+         - Being in a Professional field (vs. Arts or Other)  
+         - Having more years since highest degree, which reflects accumulated experience  
+
+    **Interpretations & Limitations**  
+    - Our analysis indicates that, across most academic fields, men tend to be promoted more 
+      rapidly and at higher rates. This pattern is *suggestive* of potential sex bias.  
+    - We don’t have data on factors like publication counts or teaching evaluations, 
+      which might also influence promotion.  
+    - The dataset ends in 1995, so **any changes in policies or practices after 1995** aren’t captured here.  
+    - **Correlation ≠ Causation**: A significant difference does not *prove* discrimination 
+      but does highlight where further investigation may be warranted.
+
+    **Overall Conclusion**:  
+    Based on the data and methods used, there is evidence of a sex-related gap in 
+    promotions from Associate to Full Professor. Men appear more likely to be promoted 
+    and often achieve promotion earlier, on average, than women with otherwise similar 
+    characteristics.
+    """
     )
 
     st.markdown(
         """
     ---
-    ### Analysis Summary
-
-    **Goal:**  
-    Determine whether there is a disparity in promotion outcomes (both promotion rate and time-to-promotion) between male and female faculty, using data from 1976 to 1995.
-
-    ---
-
-    **1. Data Preparation**  
-    - We focused on faculty who reached the Associate or Full rank at some point, then marked whether they were promoted to Full by 1995.
-    - Extracted columns such as **sex**, **field**, **degree type**, **salary**, etc., relevant to promotion analysis.
-
-    ---
-
-    **2. Bar Chart & Two-Proportion Z-Test**  
-    - A bar chart compared *Promoted* vs. *Not Promoted* counts by sex.
-    - We subdivided the test by **faculty field** (e.g., Arts, Prof, Other) to see if the difference in promotion rates between men and women held within each field.
-
-    **Hypotheses**  
-    - **Null Hypothesis (H₀):** Men and women have the **same** promotion rate from Associate to Full.  
-    - **Alternative Hypothesis (H₁):** Men and women have **different** promotion rates from Associate to Full.
-
-    **Key Finding:**  
-    - Overall, men were statistically significantly more likely to be promoted than women, except in the **Arts** field, where the data did not show a significant difference.
-
-    ---
-
-    **3. Kaplan-Meier (Time-to-Promotion) Analysis**  
-    - Kaplan-Meier survival curves displayed *how quickly* men vs. women become Full Professors over time.
-    - A steeper decline means **faster promotions** in that group.
-
-    **Field-Specific Observations**  
-    - **Overall:** Men often leave Associate rank faster in the first few years.  
-    - **Arts:** Men get promoted sooner initially; after a few years, female Arts faculty catch up or surpass men.  
-    - **Other Fields:** Men initially promoted quicker, but women’s promotion rates increase later.  
-    - **Professional Fields (Prof):** Women are promoted faster in the earliest years, but men’s promotions accelerate between years 3 and 6.
-
-    Thus, *timing* differences in promotions can vary significantly by field, with men often being promoted earlier in their careers.
-
-    ---
-
-    **4. Logistic Regression: Key Factors Affecting Promotions**  
-
-    A logistic regression model (1976–1995 data) included **sex**, **field**, **degree type**, **salary**, *etc.* The resulting **log-odds coefficients** suggest the following:
-
-    **Factors Promoting Promotion**  
-    - **Having a PhD** (`Deg: type PhD`): Strong positive coefficient, indicating higher odds of promotion.  
-    - **Professional Field** (`Field: Prof`): Linked to greater promotion likelihood than Arts or Other.  
-    - **More Years Since Highest Degree** (`yrdeg`): Increased time since degree attainment correlates with better promotion odds (reflecting accumulated experience).  
-    - **Being Male** (`Sex: M`): Men show higher promotion probabilities than women, holding other variables constant.
-
-    **Factors Hindering Promotion**  
-    - **Field: Arts**: Shows a negative coefficient, suggesting lower promotion odds compared to the Professional field.  
-    - **Being Female** (`Sex: F`): Implies lower promotion likelihood relative to men, which is consistent with our earlier statistical tests and Kaplan-Meier analysis.
-
-    ---
-
-    **Assumptions and Limitations**  
-    1. **Independence:**
-    Each faculty member’s promotion outcome is treated as an independent observation.
-
-    2. **Data Completeness:**  
-    We assume that potential confounders—such as research productivity, teaching evaluations, and departmental affiliation—are either adequately captured or do not heavily bias the results.
-
-    3. **Modeling Approach:**  
-    Logistic regression is employed with one-hot encoding for categorical features, assuming an approximate linearity in the log-odds of promotion. This approach allows us to interpret how each factor affects promotion odds, but it may oversimplify complex relationships.
-
-    4. **Time Frame:** 
-    Promotions occurring after 1995 are not included, and faculty who remain at the Associate rank by 1995 are censored.
-
-    ---
-
-    **Interpretation & Conclusions**  
-    - Across most fields, **men are more likely to be promoted** and often promoted more quickly, consistent with potential sex bias—though significance varies by field (Arts being a notable exception).  
-    - Having a PhD, being in a Professional field, and having more years since degree also increase promotion odds, while being female or in the Arts field somehow hinders promotion.  
-    - Overall, these findings support the conclusion that sex, field, and highest degree are influential in determining who becomes Full Professor, with **men** benefiting in many disciplines, especially early in the Associate timeline. 
-   
-   ---
-   **Note:**
-   This study’s findings are based solely on the 1976–1995 dataset. Unmeasured factors, such as research output or departmental culture, may also influence promotion outcomes. Additionally, our method defines promotion by recording the first year a faculty member reaches Associate rank and then the first year they attain Full Professor status, which does not fully account for the exact duration spent at the Associate rank. This is particularly important for faculty who may have had very short tenures at the Associate level or were recently hired or left the department/institution.
+    **Further Analyses**  
+    - **Cox Proportional Hazards Model**: Another survival analysis approach that can handle 
+      covariates more flexibly. If we had time and the right data structure, a Cox model could 
+      help confirm whether sex remains a strong predictor of promotion timing.  
+    - **Department-Level Breakdowns**: Larger sample sizes within each department (if available) 
+      could reveal whether certain departments show more/less disparity.  
+    - **Interaction Terms**: Additional interactions (e.g., sex × field) might illuminate 
+      whether specific fields experience greater disparities.  
     """
     )
 
 elif selected_tab == "Summary of Findings":
     st.header("Summary of Findings")
 
+    # ----------------------------------------------------------------------------
+    # Question 1: Sex Bias in 1995
+    # ----------------------------------------------------------------------------
     st.subheader("Does sex bias exist in the university in 1995?", divider="violet")
     st.markdown(
         """
+    **Key Observations**  
+    - **Raw Salary Gap**: In 1995, men generally had higher average salaries than women.  
+    - **Adjusted Analysis**: After accounting for rank, field, years of experience, and administrative duties, 
+      the difference in salaries by sex often became small or statistically nonsignificant.  
+    - **Interpretation**: While men’s average salary was higher, the bulk of this disparity can 
+      largely be explained by legitimate factors. That said, a small residual gap does persist in some 
+      models, suggesting possible—but not conclusive—evidence of sex bias.  
     """
     )
 
-    st.subheader(
-        "Are starting salaries different between male and female faculty?",
-        divider="violet",
-    )
+    # ----------------------------------------------------------------------------
+    # Question 2: Starting Salaries
+    # ----------------------------------------------------------------------------
+    st.subheader("Are starting salaries different between male and female faculty?", divider="violet")
     st.markdown(
         """
+    **Key Observations**  
+    - **Raw Differences**: Historically, there have been differences in the average starting salaries of 
+      men and women, sometimes favoring men and sometimes favoring women, depending on the hiring year 
+      and field.  
+    - **Trends Over Time**: In certain years, women appeared to have lower raw starting salaries compared 
+      to men, but these differences often narrowed once we controlled for field, degree, and experience. 
+      In some fields, women actually started at salaries comparable to, or slightly above, men.  
+    - **Regression Insights**: When using a model that factored in rank at hire, field, degree type, and 
+      years since degree, the sex effect on starting salary was often not statistically significant—or 
+      was marginally significant—indicating that the observed gap can be largely explained by these 
+      legitimate factors.
     """
     )
 
-    st.subheader(
-        "Have salary increases between 1990 and 1995 been influenced by sex?",
-        divider="violet",
-    )
+    # ----------------------------------------------------------------------------
+    # Question 3: Salary Increases (1990–1995)
+    # ----------------------------------------------------------------------------
+    st.subheader("Have salary increases between 1990 and 1995 been influenced by sex?", divider="violet")
     st.markdown(
         """
-    - No clear statistical evidence of sex bias in the **absolute** value of salary increases from 1990-1995 based on direct comparisons.
-
-    - The only statistically significant difference is the average percentage increase in salary from 1990 to 1995, which is **higher** for females. This can be attributed to the **lower** salaries for females in 1990.
-    
-    - The regression analysis consistently finds that the **sex coefficient is not statistically significant** across all linear models—whether simple, multiple, or with interaction terms—indicating that sex alone does not have a meaningful impact on salary increases after accounting for rank, experience, field, and other factors.
-    
+    **Key Observations**  
+    - **Absolute Increases**: Direct comparisons did not reveal a statistically significant difference 
+      in the dollar amount of salary increases between men and women.  
+    - **Percentage Increases**: Interestingly, women showed a higher percentage increase, which can 
+      largely be attributed to their lower baseline salaries in 1990.  
+    - **Regression Analysis**: Across simple and multiple regression models (with or without interaction 
+      terms), the coefficient for sex was consistently not significant. This suggests that other factors, 
+      such as experience, rank changes, or field, play a bigger role in determining salary growth than 
+      does sex alone.  
+    - **Conclusion**: We do not find robust evidence of sex bias in salary raises during 1990–1995 once 
+      baseline salary levels and other covariates are taken into account.
     """
     )
 
-    st.subheader(
-        "Has sex bias existed in granting promotions from Associate to Full Professor?",
-        divider="violet",
-    )
+    # ----------------------------------------------------------------------------
+    # Question 4: Promotions (Associate to Full)
+    # ----------------------------------------------------------------------------
+    st.subheader("Has sex bias existed in granting promotions from Associate to Full Professor?", divider="violet")
     st.markdown(
         """
-    - Across most fields, men are more likely to be promoted and often promoted more quickly, consistent with potential sex bias—though significance varies by field (Arts being a notable exception).
-    - Having a PhD, being in a Professional field, and having more years since degree also increase promotion odds, while being female or in the Arts field somehow hinders promotion.
-    - Overall, these findings support the conclusion that sex, field, and highest degree are influential in determining who becomes Full Professor, with men benefiting in many disciplines, especially early in the Associate timeline."""
+    **Key Observations**  
+    - **Higher Promotion Rates for Men**: In most fields, men were statistically more likely to be promoted 
+      and often attained Full rank earlier than women—though the magnitude of this disparity varied.  
+    - **Field Differences**: The Arts field sometimes showed less disparity, suggesting that the gap is 
+      not uniform across disciplines.  
+    - **Logistic Regression**: Factors such as having a PhD, working in a Professional field (e.g., 
+      Business, Engineering), or accruing more years since highest degree all significantly increased 
+      promotion odds. Being female or in the Arts field, however, tended to reduce the likelihood or speed 
+      of promotion in many models.  
+    - **Interpretation**: These findings raise concerns about possible sex bias in the promotion process. 
+      While this does not confirm intentional discrimination, it does highlight a systematic pattern 
+      whereby men achieve Full rank more quickly and at higher rates overall.
+    """
     )
 
+    # ----------------------------------------------------------------------------
+    # Final Remarks and Disclaimers
+    # ----------------------------------------------------------------------------
+    st.markdown("---")
+    st.markdown(
+        """
+    ### Overall Conclusions and Considerations
 
-st.markdown("---")
+    **Summary**  
+    - **1995 Salaries**: Men generally earned more, but much of the gap can be explained by rank, field, 
+      and experience. Some small residual difference might be attributed to sex.  
+    - **Starting Salaries**: Minimal or inconsistent evidence of ongoing sex-based discrepancies once 
+      field and degree are accounted for.  
+    - **Salary Increases**: No significant sex effect in absolute or regression-based analyses. A higher 
+      percentage increase for women reflects lower starting salaries rather than targeted bias.  
+    - **Promotions**: A consistent pattern shows men promoted at higher rates and sometimes faster, 
+      pointing to a potential bias that remains even after controlling for relevant covariates.
+
+    **Limitations**  
+    - **Missing Factors**: Data on teaching evaluations, publication records, grant funding, or departmental 
+      culture might explain some salary or promotion differences.  
+    - **Historical Context**: The dataset ends in 1995 and may not reflect recent changes in policy or culture.  
+    - **Rank Effects**: Using rank as a control variable can obscure pre-rank disparities (e.g., if sex-biased 
+      hiring practices led to more men achieving higher ranks earlier).  
+    - **Causality**: Statistical associations do not by themselves prove discrimination or intentional bias.
+
+    **Where to Go Next**  
+    - **Department-Level Studies**: Analyzing promotion and salary data department by department may uncover 
+      more nuanced patterns.  
+    - **Longitudinal Tracking**: More detailed time-to-promotion analyses (like a Cox proportional hazards 
+      model) could strengthen insights into how quickly men vs. women progress.  
+    - **Policy Review**: If residual gaps persist, institutions may consider more transparent policies for 
+      hiring, salary setting, and promotion to address potential inequities.
+
+    Overall, the results suggest that while much of the observed disparity in salaries and promotions can be 
+    explained by legitimate factors, there remain persistent patterns that favor men, especially in promotions. 
+    Understanding and addressing these patterns will likely require deeper investigation into broader aspects 
+    of academic careers and institutional practices.
+    """
+    )
+
+    st.markdown("---")
