@@ -470,6 +470,19 @@ def build_and_run_salary_model_with_interactions(X: pd.DataFrame, y: pd.Series, 
             interaction_term = f"{feature1}_x_{feature2}"
             X_model[interaction_term] = X_model[feature1] * X_model[feature2]
 
+    # Convert all columns to numeric, forcing errors to NaN
+    X_model = X_model.apply(lambda col: pd.to_numeric(col, errors='coerce'))
+    y = pd.to_numeric(y, errors='coerce')
+
+    # Drop rows with missing values in either X_model or y
+    mask = X_model.notnull().all(axis=1) & y.notnull()
+    X_model = X_model[mask]
+    y = y[mask]
+
+    # Force explicit conversion to float
+    X_model = X_model.astype(float)
+    y = y.astype(float)
+
     # Add intercept manually (since statsmodels does not add it by default)
     X_model = sm.add_constant(X_model)
 
