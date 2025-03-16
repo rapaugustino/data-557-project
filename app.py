@@ -779,68 +779,113 @@ elif selected_tab == "1995 Sex Bias":
         filtered_data["log_salary"] - filtered_data["expected_log_salary"]
     )
     filtered_data["percent_diff"] = (np.exp(filtered_data["salary_residual"]) - 1) * 100
+    filtered_data["expected_salary"] = np.exp(filtered_data["expected_log_salary"])
 
-    # Create visualization comparing predictions
+    # Create visualization comparing predictions - IMPROVED VERSION
     st.markdown("#### Comparison of Actual vs. Expected Salary by Sex")
 
-    # Create scatter plot with two trend lines
-    fig_compare = px.scatter(
-        filtered_data,
-        x="years_experience",
-        y="salary",
-        color="sex",
-        opacity=0.5,
-        labels={
-            "years_experience": "Years of Experience",
-            "salary": "Monthly Salary",
-            "sex": "Sex",
-        },
+    # Create figure
+    fig_compare = go.Figure()
+
+    # Add male scatter points and trend line
+    male_data = filtered_data[filtered_data["sex"] == "M"]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=male_data["years_experience"],
+            y=male_data["salary"],
+            mode="markers",
+            marker=dict(color="#636EFA", size=8, opacity=0.5),
+            name="Male faculty",
+        )
     )
 
-    # Add actual salary trend lines by sex
-    fig_compare.add_traces(
-        px.scatter(
-            filtered_data[filtered_data["sex"] == "M"],
-            x="years_experience",
-            y="salary",
-            trendline="ols",
-        ).data
-    )
-    fig_compare.add_traces(
-        px.scatter(
-            filtered_data[filtered_data["sex"] == "F"],
-            x="years_experience",
-            y="salary",
-            trendline="ols",
-        ).data
+    # Add female scatter points and trend line
+    female_data = filtered_data[filtered_data["sex"] == "F"]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=female_data["years_experience"],
+            y=female_data["salary"],
+            mode="markers",
+            marker=dict(color="#EF553B", size=8, opacity=0.5),
+            name="Female faculty",
+        )
     )
 
-    # Add expected salary trend line (based on model without sex)
-    filtered_data["expected_salary"] = np.exp(filtered_data["expected_log_salary"])
-    fig_compare.add_traces(
-        px.scatter(
-            filtered_data, x="years_experience", y="expected_salary", trendline="ols"
-        ).data
+    # Calculate and add trend lines
+    # Male trend line
+    male_model = np.polyfit(male_data["years_experience"], male_data["salary"], 1)
+    male_x = np.array(
+        [min(filtered_data["years_experience"]), max(filtered_data["years_experience"])]
+    )
+    male_y = male_model[0] * male_x + male_model[1]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=male_x,
+            y=male_y,
+            mode="lines",
+            line=dict(color="#636EFA", width=3),
+            name="Male trend line",
+        )
     )
 
-    fig_compare.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
-    fig_compare.update_xaxes(showgrid=True, gridcolor="lightgray")
-    fig_compare.update_yaxes(showgrid=True, gridcolor="lightgray")
+    # Female trend line
+    female_model = np.polyfit(female_data["years_experience"], female_data["salary"], 1)
+    female_x = np.array(
+        [min(filtered_data["years_experience"]), max(filtered_data["years_experience"])]
+    )
+    female_y = female_model[0] * female_x + female_model[1]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=female_x,
+            y=female_y,
+            mode="lines",
+            line=dict(color="#EF553B", width=3),
+            name="Female trend line",
+        )
+    )
 
-    # Update legend
-    fig_compare.data[2].name = "Male trend (actual)"
-    fig_compare.data[3].name = "Female trend (actual)"
-    fig_compare.data[4].name = "Expected trend (fair model)"
+    # Expected salary trend line (based on model without sex)
+    expected_model = np.polyfit(
+        filtered_data["years_experience"], filtered_data["expected_salary"], 1
+    )
+    expected_x = np.array(
+        [min(filtered_data["years_experience"]), max(filtered_data["years_experience"])]
+    )
+    expected_y = expected_model[0] * expected_x + expected_model[1]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=expected_x,
+            y=expected_y,
+            mode="lines",
+            line=dict(color="black", width=3, dash="dash"),
+            name="Expected 'fair' salary",
+        )
+    )
 
-    # Show the plot
+    # Layout
+    fig_compare.update_layout(
+        plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6",
+        xaxis=dict(title="Years of Experience", showgrid=True, gridcolor="lightgray"),
+        yaxis=dict(
+            title="Monthly Salary",
+            showgrid=True,
+            gridcolor="lightgray",
+            tickformat=".1f",
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        margin=dict(l=20, r=20, t=60, b=20),
+        height=500,
+    )
+
     st.plotly_chart(fig_compare, use_container_width=True)
 
     st.markdown(
         """
     **How to interpret:**
-    - The "Expected trend" shows what salary would be predicted based only on legitimate factors (excluding sex)
+    - The **dashed black line** shows what salary would be predicted based only on legitimate factors (excluding sex)
     - If one sex's trend line is consistently above or below the expected trend, it suggests potential bias
-    - Differences between actual and expected salaries form the basis for our "underpaid" analysis below
+    - The gap between a colored line and the black line represents potential bias
     """
     )
 
@@ -1148,7 +1193,6 @@ elif selected_tab == "1995 Sex Bias":
     3. Changes over time in salary determination practices
     """
     )
-
 
 #  -----------------------------------------------------------------------------
 #  Question 2: Has Sex Bias Existed in Starting Salaries?
