@@ -941,7 +941,7 @@ elif selected_tab == "1995 Sex Bias":
     """
     )
 
-    threshold = st.slider("Underpaid Threshold (%)", -20, -5, -10) / 100
+    threshold = st.slider("Underpaid Threshold (%)", -20, -5, -5) / 100
     filtered_data["underpaid"] = (filtered_data["salary_residual"] < threshold).astype(
         int
     )
@@ -1154,40 +1154,60 @@ elif selected_tab == "1995 Sex Bias":
     st.markdown(
         """
     ### Summary of Findings
-    
+
     Our analysis used multiple approaches to investigate potential sex bias in faculty salaries at this university in 1995:
-    
-    1. **Descriptive Statistics:** We observed raw salary differences between men and women.
-    
+
+    1. **Descriptive Statistics:** We observed raw salary differences between men and women, with women having an unadjusted salary difference of $1334 per month 
+
     2. **Linear Regression:** We estimated the percentage difference in salary attributable to sex after
-       controlling for rank, field, experience, degree, and administrative duties.
-    
+    controlling for rank, field, experience, degree, and administrative duties. The coefficient suggests a difference of 5 percent in salary compared to male salaries.
+
     3. **Fair Salary Model:** We created a model that predicts salary based solely on legitimate factors,
-       excluding sex, to determine what faculty members should earn based on their qualifications.
+    excluding sex, to determine what faculty members should earn based on their qualifications.
     
+    **Model Comparison Insight:** When comparing the models with and without the sex variable, we found that including sex 
+    improved model fit metrics:
+    - R-squared increased by about 0.4 percentage points (from 58.3% to 58.7%)
+    - Both AIC and BIC values were lower (better) for the model including sex
+    - The log-likelihood was higher for the model including sex by 7.5 points
+    
+    These differences, while small in terms of overall variance explained, suggest that sex does have some predictive 
+    power for faculty salaries after controlling for legitimate factors. The improvement in model fit outweighs the 
+    penalty for adding another parameter, supporting our findings about sex-based salary differences.
+
     4. **Logistic Regression:** We tested whether women are more likely than men to be "underpaid"
-       relative to expectations based on their qualifications.
+    relative to expectations based on their qualifications.
     
+    **Logistic Model Finding:** Using a 5% threshold to define "underpaid" faculty (those earning at least 5% 
+    less than predicted by the fair salary model), we found:
+    - Women are 1.33 times more likely to be underpaid than men (95% CI: 1.06 to 1.67, p=0.0128)
+    - This statistically significant result provides additional evidence of potential sex bias
+    - The effect persisted even when considering only the sex variable, suggesting a robust pattern
+    
+    This complementary approach confirms that not only do women earn less on average (as shown in the linear 
+    regression), but they are also significantly more likely to fall into the "underpaid" category relative 
+    to what would be expected based on their qualifications.
+
     ### Limitations
-    
+
     Several important limitations should be considered:
-    
+
     1. **Unmeasured Factors:** Our analysis couldn't control for variables not in the dataset, such as
-       publication record, teaching evaluations, or grant funding, which might legitimately affect salary.
-    
+    publication record, teaching evaluations, or grant funding, which might legitimately affect salary.
+
     2. **Pre-existing Bias:** If bias affected earlier decisions (hiring, promotion), controlling for
-       rank might actually mask discrimination rather than isolate it.
-    
+    rank might actually mask discrimination rather than isolate it.
+
     3. **Causality:** Statistical associations don't necessarily imply causation. We can identify
-       patterns but can't definitively establish their causes.
-    
+    patterns but can't definitively establish their causes.
+
     4. **Sample Size:** Particularly when filtering by field, small sample sizes may limit statistical power
-       and the reliability of estimates.
-    
+    and the reliability of estimates.
+
     ### Next Steps
-    
+
     For a comprehensive understanding of potential sex bias at this university, we should also examine:
-    
+
     1. Questions 2-4 in this analysis (starting salaries, salary increases, and promotion patterns)
     2. Department-level patterns that might be obscured in aggregated analyses
     3. Changes over time in salary determination practices
