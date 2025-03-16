@@ -707,7 +707,7 @@ elif selected_tab == "1995 Sex Bias":
         """
     ### Creating a "Fair Salary" Model
     
-    To identify potential bias, we can also build a model that predicts salary based only on legitimate factors (excluding sex).
+    To identify potential bias, we build a reduced model that predicts salary based only on legitimate factors (excluding sex).
     This "fair salary" model tells us what someone with certain qualifications would be expected to earn regardless of their sex.
     
     By comparing actual salaries to these predicted "fair salaries," we can identify individuals who might be underpaid
