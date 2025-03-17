@@ -1680,7 +1680,7 @@ elif selected_tab == "Starting Salaries":
         earned about a 3% lower starting salary than men after controlling for other factors. This was
         marginally statistically significant (p=0.03)
     
-    3. **Regression with Time Interaction** We used a Sex x Time interaction term to examine whether sex-based
+    3. **Regression with Time Interaction:** We used a Sex x Time interaction term to examine whether sex-based
         disparities in starting salaries have changed over time. We did not find any statistically significant 
         change over time.
     
@@ -1689,7 +1689,7 @@ elif selected_tab == "Starting Salaries":
     Several important limitations should be considered:
     
     1. **Unmeasured Factors:** Our analysis couldn't control for variables not in the dataset, such as
-       publication record, teaching evaluations, or grant funding, which might legitimately affect salary.
+       publication record, which might legitimately affect starting salary.
     
     2. **Causality:** Statistical associations don't necessarily imply causation. We can identify
        patterns but can't definitively establish their causes.
