@@ -1634,8 +1634,8 @@ elif selected_tab == "Starting Salaries":
     percent_ci_lower_q2_int = time_ci_lower_q2_int * 100
     percent_ci_upper_q2_int = time_ci_upper_q2_int * 100
     
-    if female_pval_q2 < 0.05:
-        if percent_effect_q2 < 0:
+    if time_pval_q2_int < 0.05:
+        if percent_effect_q2_int < 0:
             effect_interpretation_q2_int = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties, is widening by approximately {abs(percent_effect_q2_int):.1f}% percent per year (95% CI: {percent_ci_lower_q2_int:.1f}% to {percent_ci_upper_q2_int:.1f}%, p={time_pval_q2_int:.4f})."
             st.info(effect_interpretation_q2_int)
             st.markdown(
