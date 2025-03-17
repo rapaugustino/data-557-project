@@ -1510,40 +1510,47 @@ elif selected_tab == "Starting Salaries":
     st.markdown("**Starting Salary Model Results**")
     st.dataframe(model_results)
     
-    # Interpret the female coefficient
-    female_coef_q2 = model.params["sex_bool"]
-    female_pval_q2 = model.pvalues["sex_bool"]
-    percent_effect_q2 = female_coef_q2 * 100
-    female_ci_lower_q2 = model.conf_int().loc["sex_bool"][0]
-    female_ci_upper_q2 = model.conf_int().loc["sex_bool"][1]
-    percent_ci_lower_q2 = female_ci_lower_q2 * 100
-    percent_ci_upper_q2 = female_ci_upper_q2 * 100
+    try:
+        # Interpret the female coefficient
+        female_coef_q2 = model.params["sex_bool"]
+        female_pval_q2 = model.pvalues["sex_bool"]
+        percent_effect_q2 = female_coef_q2 * 100
+        female_ci_lower_q2 = model.conf_int().loc["sex_bool"][0]
+        female_ci_upper_q2 = model.conf_int().loc["sex_bool"][1]
+        percent_ci_lower_q2 = female_ci_lower_q2 * 100
+        percent_ci_upper_q2 = female_ci_upper_q2 * 100
     
-    if female_pval_q2 < 0.05:
-        if percent_effect_q2 < 0:
-            effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, women's starting salaries are approximately {abs(percent_effect_q2):.1f}% less than similarly qualified men (95% CI: {percent_ci_lower_q2:.1f}% to {percent_ci_upper_q2:.1f}%, p={female_pval_q2:.4f})."
+        if female_pval_q2 < 0.05:
+            if percent_effect_q2 < 0:
+                effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, women's starting salaries are approximately {abs(percent_effect_q2):.1f}% less than similarly qualified men (95% CI: {percent_ci_lower_q2:.1f}% to {percent_ci_upper_q2:.1f}%, p={female_pval_q2:.4f})."
+                st.info(effect_interpretation_q2)
+                st.markdown(
+                """
+                **This statistically significant difference suggests potential sex bias in starting salaries.**
+            
+                Since we've controlled for legitimate factors affecting starting salaries, the remaining difference 
+                attributable to sex raises concerns about systematic bias.
+                """
+                )
+            else:
+                effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, women's starting salaries are approximately {abs(percent_effect_q2):.1f}% more than similarly qualified men (95% CI: {percent_ci_lower_q2:.1f}% to {percent_ci_upper_q2:.1f}%, p={female_pval_q2:.4f})."
+                st.success(effect_interpretation_q2)
+        else:
+            effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, there is no statistically significant difference in starting salaries between men and women (p={female_pval_q2:.4f})."
             st.info(effect_interpretation_q2)
             st.markdown(
-                """
-            **This statistically significant difference suggests potential sex bias in starting salaries.**
-            
-            Since we've controlled for legitimate factors affecting starting salaries, the remaining difference 
-            attributable to sex raises concerns about systematic bias.
+            """
+            **The absence of a significant difference suggests that the raw gap in starting salaries may be explained by legitimate factors.**
+        
+            This doesn't rule out other forms of bias (such as in hiring or promotion), but suggests that 
+            men and women with similar qualifications receive similar starting salaries.
             """
             )
-        else:
-            effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, women's starting salaries are approximately {abs(percent_effect_q2):.1f}% more than similarly qualified men (95% CI: {percent_ci_lower_q2:.1f}% to {percent_ci_upper_q2:.1f}%, p={female_pval_q2:.4f})."
-            st.success(effect_interpretation_q2)
-    else:
-        effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, there is no statistically significant difference in starting salaries between men and women (p={female_pval_q2:.4f})."
-        st.info(effect_interpretation_q2)
-        st.markdown(
+    except:
+        st.info(
             """
-        **The absence of a significant difference suggests that the raw gap in starting salaries may be explained by legitimate factors.**
-        
-        This doesn't rule out other forms of bias (such as in hiring or promotion), but suggests that 
-        men and women with similar qualifications receive similar starting salaries.
-        """
+            Error: The sex coefficient of the model (sex_bool) has been turned off. Please turn it back on to see analysis results.
+            """
         )
 
     st.markdown(
@@ -1631,36 +1638,39 @@ elif selected_tab == "Starting Salaries":
     st.markdown("**Model Results**")
     st.dataframe(int_model_results)
     
-       # Interpret the time coefficient
-    time_coef_q2_int = int_model.params["sex_year_1975"]
-    time_pval_q2_int = int_model.pvalues["sex_year_1975"]
-    percent_effect_q2_int = time_coef_q2_int * 100
-    time_ci_lower_q2_int = int_model.conf_int().loc["sex_year_1975"][0]
-    time_ci_upper_q2_int = int_model.conf_int().loc["sex_year_1975"][1]
-    percent_ci_lower_q2_int = time_ci_lower_q2_int * 100
-    percent_ci_upper_q2_int = time_ci_upper_q2_int * 100
+    try:
+        # Interpret the time coefficient
+        time_coef_q2_int = int_model.params["sex_year_1975"]
+        time_pval_q2_int = int_model.pvalues["sex_year_1975"]
+        percent_effect_q2_int = time_coef_q2_int * 100
+        time_ci_lower_q2_int = int_model.conf_int().loc["sex_year_1975"][0]
+        time_ci_upper_q2_int = int_model.conf_int().loc["sex_year_1975"][1]
+        percent_ci_lower_q2_int = time_ci_lower_q2_int * 100
+        percent_ci_upper_q2_int = time_ci_upper_q2_int * 100
     
-    if time_pval_q2_int < 0.05:
-        if percent_effect_q2_int < 0:
-            effect_interpretation_q2_int = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties, is widening by approximately {abs(percent_effect_q2_int):.1f}% percent per year (95% CI: {percent_ci_lower_q2_int:.1f}% to {percent_ci_upper_q2_int:.1f}%, p={time_pval_q2_int:.4f})."
-            st.info(effect_interpretation_q2_int)
-            st.markdown(
+        if time_pval_q2_int < 0.05:
+            if percent_effect_q2_int < 0:
+                effect_interpretation_q2_int = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties, is widening by approximately {abs(percent_effect_q2_int):.1f}% percent per year (95% CI: {percent_ci_lower_q2_int:.1f}% to {percent_ci_upper_q2_int:.1f}%, p={time_pval_q2_int:.4f})."
+                st.info(effect_interpretation_q2_int)
+                st.markdown(
                 """
-            **This statistically significant difference suggests sex bias in starting salaries may be improving over time.**
+                **This statistically significant difference suggests sex bias in starting salaries may be improving over time.**
 
+                """
+                )
+            else:
+                effect_interpretation_q2_int = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties, is narrowing by approximately {abs(percent_effect_q2_int):.1f}%  (95% CI: {percent_ci_lower_q2_int:.1f}% to {percent_ci_upper_q2_int:.1f}%, p={time_pval_q2_int:.4f})."
+                st.success(effect_interpretation_q2_int)
+        else:
+            effect_interpretation_q2 = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties is not significantly changing over time (p={time_pval_q2_int:.4f})."
+            st.info(effect_interpretation_q2)
+            st.markdown(
+            """
+            **The absence of a significant difference suggests that either sex bias in starting salaries has remained steady over time, or our statistical methods do not allow us to discern a trend over time in sex bias for starting salaries.**
             """
             )
-        else:
-            effect_interpretation_q2_int = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties, is narrowing by approximately {abs(percent_effect_q2_int):.1f}%  (95% CI: {percent_ci_lower_q2_int:.1f}% to {percent_ci_upper_q2_int:.1f}%, p={time_pval_q2_int:.4f})."
-            st.success(effect_interpretation_q2_int)
-    else:
-        effect_interpretation_q2 = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties is not significantly changing over time (p={time_pval_q2_int:.4f})."
-        st.info(effect_interpretation_q2)
-        st.markdown(
-            """
-        **The absence of a significant difference suggests that either sex bias in starting salaries has remained steady over time, or our statistical methods do not allow us to discern a trend over time in sex bias for starting salaries.**
-        """
-        )
+    except:
+        st.info("Error: The sex x time interaction coefficient of the model (sex_year_1975) has been turned off. Please turn it back on to see analysis results.")
 
     # --- Section E: Conclusion ---
     st.subheader("E) Conclusion and Limitations")
