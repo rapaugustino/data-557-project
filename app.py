@@ -1274,9 +1274,6 @@ elif selected_tab == "Starting Salaries":
     if df_yrhired.empty:
         st.warning("No eligible records found. Check your dataset.")
         st.stop()
-    
-    # Create a full range of years from min to max (important for error handling)
-    all_years = pd.DataFrame({'yr_full': range(start_year, end_year + 1)})
 
     # Add field filter
     st.markdown(
@@ -1312,6 +1309,9 @@ elif selected_tab == "Starting Salaries":
         value=(int(ss_filtered["yr_full"].min()), int(ss_filtered["yr_full"].max())),
         step=1,
     )
+    
+    # Create a full range of years from min to max (important for error handling)
+    all_years = pd.DataFrame({'yr_full': range(start_year, end_year + 1)})
 
     # Filter the data based on the selected year range
     ss_filtered_yr = ss_filtered[
