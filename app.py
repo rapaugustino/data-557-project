@@ -1201,11 +1201,6 @@ elif selected_tab == "1995 Sex Bias":
     3. **Causality:** Statistical associations don't necessarily imply causation. We can identify
     patterns but can't definitively establish their causes.
 
-       rank might actually mask discrimination rather than isolate it.
-    
-    3. **Causality:** Statistical associations do not necessarily imply causation. Although, we could identify
-       patterns in this analysis, we can not definitively establish their causes.
-    
     4. **Sample Size:** Particularly when filtering by field, small sample sizes may limit statistical power
     and the reliability of estimates.
 
@@ -1216,9 +1211,6 @@ elif selected_tab == "1995 Sex Bias":
     1. Questions 2-4 in this analysis (starting salaries, salary increases, and promotion patterns)
     2. Department-level patterns that might be obscured in aggregated analyses
     3. Changes over time in salary determination practices
-    
-    1. Department-level patterns that might be obscured in aggregated analyses
-    2. Changes over time in salary determination practices
     """
     )
 
@@ -1282,6 +1274,9 @@ elif selected_tab == "Starting Salaries":
     if df_yrhired.empty:
         st.warning("No eligible records found. Check your dataset.")
         st.stop()
+    
+    # Create a full range of years from min to max (important for error handling)
+    all_years = pd.DataFrame({'yr_full': range(start_year, end_year + 1)})
 
     # Add field filter
     st.markdown(
@@ -1400,9 +1395,12 @@ elif selected_tab == "Starting Salaries":
 
     # Normalize salaries by dividing them by average male starting salary in the current year
     # Use these values to calculate unadjusted starting salary percentage gap
+    #If there are no males in the current year, we use interpolation to estimate
     avg_sal_male = avg_salary[avg_salary["sex"] == "M"].copy()
     avg_sal_male.drop("sex", axis=1, inplace=True)
     avg_sal_male.rename(columns={"salary": "avg_salary"}, inplace=True)
+    avg_sal_male = pd.merge(all_years, avg_sal_male, on="yr_full", how="left")
+    avg_sal_male = avg_sal_male.interpolate(method="linear")
     ss_filtered_yr = pd.merge(ss_filtered_yr, avg_sal_male, on="yr_full", how="left")
     ss_filtered_yr["salary_anom"] = (
         ss_filtered_yr["salary"] - ss_filtered_yr["avg_salary"]
@@ -2146,7 +2144,9 @@ elif selected_tab == "Promotions (Associate to Full)":
     # SECTION C: Two-Proportion Z-Test
     # --------------------------------------------------------------------
     st.markdown("### C) Statistical Test of Promotion Rates")
-    st.subheader("Two-Proportion Z-Test for Promotion Rates, at Significance Level = 0.05")
+    st.subheader(
+        "Two-Proportion Z-Test for Promotion Rates, at Significance Level = 0.05"
+    )
     st.markdown(
         """
     **Hypotheses**  
@@ -2459,7 +2459,7 @@ elif selected_tab == "Summary of Findings":
     - **Historical Context**: The dataset ends in 1995 and may not reflect recent changes in policy or culture.  
     - **Rank Effects**: Using rank as a control variable can obscure pre-rank disparities (e.g., if sex-biased 
       hiring practices led to more men achieving higher ranks earlier).  
-    - **Causality**: Statistical associations, although observed in this study, do not by themselves prove discrimination or intentional bias.
+    - **Causality**: Statistical associations do not by themselves prove discrimination or intentional bias.
 
     **Where to Go Next**  
     - **Department-Level Studies**: Analyzing promotion and salary data department by department may uncover 
