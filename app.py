@@ -1631,8 +1631,8 @@ elif selected_tab == "Starting Salaries":
     percent_effect_q2_int = time_coef_q2_int * 100
     time_ci_lower_q2_int = int_model.conf_int().loc["sex_year_1975"][0]
     time_ci_upper_q2_int = int_model.conf_int().loc["sex_year_1975"][1]
-    percent_ci_lower_q2_int = time_ci_lower_q2_int - 1 * 100
-    percent_ci_upper_q2_int = time_ci_upper_q2_int - 1 * 100
+    percent_ci_lower_q2_int = time_ci_lower_q2_int * 100
+    percent_ci_upper_q2_int = time_ci_upper_q2_int * 100
     
     if female_pval_q2 < 0.05:
         if percent_effect_q2 < 0:
