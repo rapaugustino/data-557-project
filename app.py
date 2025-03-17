@@ -202,17 +202,21 @@ elif selected_tab == "1995 Sex Bias":
 
     st.header("Question 1: Does Sex Bias Exist at the University in 1995?")
 
+    st.markdown(
+        """
+    **Objective:**  
+    Determine if there is an evidence of sex-based salary discrimination 
+    at the university in 1995.
+    """
+    )
+
     # Introduction to the analysis
     st.markdown(
         """
-    ### Introduction
-    
-    In this analysis, we investigate whether there is evidence of sex-based salary discrimination 
-    at the university in 1995. While raw differences in salary between men and women often exist, 
+    **Approach:**  
+    While raw differences in salary between men and women often exist, 
     these differences could be due to legitimate factors like field, rank, experience, or 
-    administrative duties. 
-    
-    Our approach is to first examine the raw (unadjusted) salary differences, then use statistical 
+    administrative duties. Our approach is to first examine the raw (unadjusted) salary differences, then use statistical 
     methods to account for legitimate factors that affect salary. Any remaining difference 
     that can be attributed to sex may suggest potential bias.
     
@@ -381,8 +385,8 @@ elif selected_tab == "1995 Sex Bias":
             labels={"rank": "Rank", "salary": "Monthly Salary", "sex": "Sex"},
         )
         fig1.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
-        fig1.update_xaxes(showgrid=True, gridcolor='lightgray')
-        fig1.update_yaxes(showgrid=True, gridcolor='lightgray')
+        fig1.update_xaxes(showgrid=True, gridcolor="lightgray")
+        fig1.update_yaxes(showgrid=True, gridcolor="lightgray")
         st.plotly_chart(fig1, use_container_width=True)
 
         st.markdown(
@@ -417,8 +421,8 @@ elif selected_tab == "1995 Sex Bias":
             },
         )
         fig2.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
-        fig2.update_xaxes(showgrid=True, gridcolor='lightgray')
-        fig2.update_yaxes(showgrid=True, gridcolor='lightgray')
+        fig2.update_xaxes(showgrid=True, gridcolor="lightgray")
+        fig2.update_yaxes(showgrid=True, gridcolor="lightgray")
 
         st.plotly_chart(fig2, use_container_width=True)
 
@@ -468,11 +472,9 @@ elif selected_tab == "1995 Sex Bias":
                         y="gap_percent",
                         labels={"field": "Field", "gap_percent": "Gap (%)"},
                     )
-                    fig3.update_layout(
-                        plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6"
-                    )
-                    fig3.update_xaxes(showgrid=True, gridcolor='lightgray')
-                    fig3.update_yaxes(showgrid=True, gridcolor='lightgray')
+                    fig3.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+                    fig3.update_xaxes(showgrid=True, gridcolor="lightgray")
+                    fig3.update_yaxes(showgrid=True, gridcolor="lightgray")
 
                     st.plotly_chart(fig3, use_container_width=True)
 
@@ -507,11 +509,9 @@ elif selected_tab == "1995 Sex Bias":
                     labels={"sex": "Sex", "salary": "Average Monthly Salary"},
                     title=f"Average Salary by Sex in {selected_field} Field",
                 )
-                fig3.update_layout(
-                    plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6"
-                )
-                fig3.update_xaxes(showgrid=True, gridcolor='lightgray')
-                fig3.update_yaxes(showgrid=True, gridcolor='lightgray')
+                fig3.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+                fig3.update_xaxes(showgrid=True, gridcolor="lightgray")
+                fig3.update_yaxes(showgrid=True, gridcolor="lightgray")
 
                 st.plotly_chart(fig3, use_container_width=True)
 
@@ -552,11 +552,9 @@ elif selected_tab == "1995 Sex Bias":
             barmode="overlay",
             labels={"log_salary": "Log Monthly Salary", "sex": "Sex"},
         )
-        fig4.update_layout(
-            plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6"
-        )
-        fig4.update_xaxes(showgrid=True, gridcolor='lightgray')
-        fig4.update_yaxes(showgrid=True, gridcolor='lightgray')
+        fig4.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+        fig4.update_xaxes(showgrid=True, gridcolor="lightgray")
+        fig4.update_yaxes(showgrid=True, gridcolor="lightgray")
 
         st.plotly_chart(fig4, use_container_width=True)
 
@@ -657,11 +655,9 @@ elif selected_tab == "1995 Sex Bias":
         },
     )
 
-    fig_residual.update_layout(
-        plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6"
-    )
-    fig_residual.update_xaxes(showgrid=True, gridcolor='lightgray')
-    fig_residual.update_yaxes(showgrid=True, gridcolor='lightgray')
+    fig_residual.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
+    fig_residual.update_xaxes(showgrid=True, gridcolor="lightgray")
+    fig_residual.update_yaxes(showgrid=True, gridcolor="lightgray")
     fig_residual.add_hline(y=0, line_dash="dash", line_color="black")
 
     st.plotly_chart(fig_residual, use_container_width=True)
@@ -711,7 +707,7 @@ elif selected_tab == "1995 Sex Bias":
         """
     ### Creating a "Fair Salary" Model
     
-    To identify potential bias, we can also build a model that predicts salary based only on legitimate factors (excluding sex).
+    To identify potential bias, we build a reduced model that predicts salary based only on legitimate factors (excluding sex).
     This "fair salary" model tells us what someone with certain qualifications would be expected to earn regardless of their sex.
     
     By comparing actual salaries to these predicted "fair salaries," we can identify individuals who might be underpaid
@@ -783,68 +779,113 @@ elif selected_tab == "1995 Sex Bias":
         filtered_data["log_salary"] - filtered_data["expected_log_salary"]
     )
     filtered_data["percent_diff"] = (np.exp(filtered_data["salary_residual"]) - 1) * 100
+    filtered_data["expected_salary"] = np.exp(filtered_data["expected_log_salary"])
 
-    # Create visualization comparing predictions
+    # Create visualization comparing predictions - IMPROVED VERSION
     st.markdown("#### Comparison of Actual vs. Expected Salary by Sex")
 
-    # Create scatter plot with two trend lines
-    fig_compare = px.scatter(
-        filtered_data,
-        x="years_experience",
-        y="salary",
-        color="sex",
-        opacity=0.5,
-        labels={
-            "years_experience": "Years of Experience",
-            "salary": "Monthly Salary",
-            "sex": "Sex",
-        },
+    # Create figure
+    fig_compare = go.Figure()
+
+    # Add male scatter points and trend line
+    male_data = filtered_data[filtered_data["sex"] == "M"]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=male_data["years_experience"],
+            y=male_data["salary"],
+            mode="markers",
+            marker=dict(color="#636EFA", size=8, opacity=0.5),
+            name="Male faculty",
+        )
     )
 
-    # Add actual salary trend lines by sex
-    fig_compare.add_traces(
-        px.scatter(
-            filtered_data[filtered_data["sex"] == "M"],
-            x="years_experience",
-            y="salary",
-            trendline="ols",
-        ).data
-    )
-    fig_compare.add_traces(
-        px.scatter(
-            filtered_data[filtered_data["sex"] == "F"],
-            x="years_experience",
-            y="salary",
-            trendline="ols",
-        ).data
+    # Add female scatter points and trend line
+    female_data = filtered_data[filtered_data["sex"] == "F"]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=female_data["years_experience"],
+            y=female_data["salary"],
+            mode="markers",
+            marker=dict(color="#EF553B", size=8, opacity=0.5),
+            name="Female faculty",
+        )
     )
 
-    # Add expected salary trend line (based on model without sex)
-    filtered_data["expected_salary"] = np.exp(filtered_data["expected_log_salary"])
-    fig_compare.add_traces(
-        px.scatter(
-            filtered_data, x="years_experience", y="expected_salary", trendline="ols"
-        ).data
+    # Calculate and add trend lines
+    # Male trend line
+    male_model = np.polyfit(male_data["years_experience"], male_data["salary"], 1)
+    male_x = np.array(
+        [min(filtered_data["years_experience"]), max(filtered_data["years_experience"])]
+    )
+    male_y = male_model[0] * male_x + male_model[1]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=male_x,
+            y=male_y,
+            mode="lines",
+            line=dict(color="#636EFA", width=3),
+            name="Male trend line",
+        )
     )
 
-    fig_compare.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
-    fig_compare.update_xaxes(showgrid=True, gridcolor='lightgray')
-    fig_compare.update_yaxes(showgrid=True, gridcolor='lightgray')
+    # Female trend line
+    female_model = np.polyfit(female_data["years_experience"], female_data["salary"], 1)
+    female_x = np.array(
+        [min(filtered_data["years_experience"]), max(filtered_data["years_experience"])]
+    )
+    female_y = female_model[0] * female_x + female_model[1]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=female_x,
+            y=female_y,
+            mode="lines",
+            line=dict(color="#EF553B", width=3),
+            name="Female trend line",
+        )
+    )
 
-    # Update legend
-    fig_compare.data[2].name = "Male trend (actual)"
-    fig_compare.data[3].name = "Female trend (actual)"
-    fig_compare.data[4].name = "Expected trend (fair model)"
+    # Expected salary trend line (based on model without sex)
+    expected_model = np.polyfit(
+        filtered_data["years_experience"], filtered_data["expected_salary"], 1
+    )
+    expected_x = np.array(
+        [min(filtered_data["years_experience"]), max(filtered_data["years_experience"])]
+    )
+    expected_y = expected_model[0] * expected_x + expected_model[1]
+    fig_compare.add_trace(
+        go.Scatter(
+            x=expected_x,
+            y=expected_y,
+            mode="lines",
+            line=dict(color="black", width=3, dash="dash"),
+            name="Expected 'fair' salary",
+        )
+    )
 
-    # Show the plot
+    # Layout
+    fig_compare.update_layout(
+        plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6",
+        xaxis=dict(title="Years of Experience", showgrid=True, gridcolor="lightgray"),
+        yaxis=dict(
+            title="Monthly Salary",
+            showgrid=True,
+            gridcolor="lightgray",
+            tickformat=".1f",
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        margin=dict(l=20, r=20, t=60, b=20),
+        height=500,
+    )
+
     st.plotly_chart(fig_compare, use_container_width=True)
 
     st.markdown(
         """
     **How to interpret:**
-    - The "Expected trend" shows what salary would be predicted based only on legitimate factors (excluding sex)
+    - The **dashed black line** shows what salary would be predicted based only on legitimate factors (excluding sex)
     - If one sex's trend line is consistently above or below the expected trend, it suggests potential bias
-    - Differences between actual and expected salaries form the basis for our "underpaid" analysis below
+    - The gap between a colored line and the black line represents potential bias
     """
     )
 
@@ -861,8 +902,8 @@ elif selected_tab == "1995 Sex Bias":
     )
 
     fig_diff.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
-    fig_diff.update_xaxes(showgrid=True, gridcolor='lightgray')
-    fig_diff.update_yaxes(showgrid=True, gridcolor='lightgray')
+    fig_diff.update_xaxes(showgrid=True, gridcolor="lightgray")
+    fig_diff.update_yaxes(showgrid=True, gridcolor="lightgray")
 
     st.plotly_chart(fig_diff, use_container_width=True)
 
@@ -900,7 +941,7 @@ elif selected_tab == "1995 Sex Bias":
     """
     )
 
-    threshold = st.slider("Underpaid Threshold (%)", -20, -5, -10) / 100
+    threshold = st.slider("Underpaid Threshold (%)", -20, -5, -5) / 100
     filtered_data["underpaid"] = (filtered_data["salary_residual"] < threshold).astype(
         int
     )
@@ -957,8 +998,8 @@ elif selected_tab == "1995 Sex Bias":
     )
 
     fig5.update_layout(plot_bgcolor="#e5ecf6", paper_bgcolor="#e5ecf6")
-    fig5.update_xaxes(showgrid=True, gridcolor='lightgray')
-    fig5.update_yaxes(showgrid=True, gridcolor='lightgray')
+    fig5.update_xaxes(showgrid=True, gridcolor="lightgray")
+    fig5.update_yaxes(showgrid=True, gridcolor="lightgray")
 
     # Add vertical line at threshold
     fig5.add_vline(x=threshold, line_dash="dash", line_color="red")
@@ -1113,45 +1154,73 @@ elif selected_tab == "1995 Sex Bias":
     st.markdown(
         """
     ### Summary of Findings
-    
+
     Our analysis used multiple approaches to investigate potential sex bias in faculty salaries at this university in 1995:
-    
-    1. **Descriptive Statistics:** We observed raw salary differences between men and women.
-    
+
+    1. **Descriptive Statistics:** We observed raw salary differences between men and women, with women having an unadjusted salary difference of $1334 per month 
+
     2. **Linear Regression:** We estimated the percentage difference in salary attributable to sex after
-       controlling for rank, field, experience, degree, and administrative duties.
-    
+    controlling for rank, field, experience, degree, and administrative duties. The coefficient suggests a difference of 5 percent in salary compared to male salaries.
+
     3. **Fair Salary Model:** We created a model that predicts salary based solely on legitimate factors,
-       excluding sex, to determine what faculty members should earn based on their qualifications.
+    excluding sex, to determine what faculty members should earn based on their qualifications.
     
+    **Model Comparison Insight:** When comparing the models with and without the sex variable, we found that including sex 
+    improved model fit metrics:
+    - R-squared increased by about 0.4 percentage points (from 58.3% to 58.7%)
+    - Both AIC and BIC values were lower (better) for the model including sex
+    - The log-likelihood was higher for the model including sex by 7.5 points
+    
+    These differences, while small in terms of overall variance explained, suggest that sex does have some predictive 
+    power for faculty salaries after controlling for legitimate factors. The improvement in model fit outweighs the 
+    penalty for adding another parameter, supporting our findings about sex-based salary differences.
+
     4. **Logistic Regression:** We tested whether women are more likely than men to be "underpaid"
-       relative to expectations based on their qualifications.
+    relative to expectations based on their qualifications.
     
+    **Logistic Model Finding:** Using a 5% threshold to define "underpaid" faculty (those earning at least 5% 
+    less than predicted by the fair salary model), we found:
+    - Women are 1.33 times more likely to be underpaid than men (95% CI: 1.06 to 1.67, p=0.0128)
+    - This statistically significant result provides additional evidence of potential sex bias
+    - The effect persisted even when considering only the sex variable, suggesting a robust pattern
+    
+    This complementary approach confirms that not only do women earn less on average (as shown in the linear 
+    regression), but they are also significantly more likely to fall into the "underpaid" category relative 
+    to what would be expected based on their qualifications.
+
     ### Limitations
-    
+
     Several important limitations should be considered:
-    
+
     1. **Unmeasured Factors:** Our analysis couldn't control for variables not in the dataset, such as
-       publication record, teaching evaluations, or grant funding, which might legitimately affect salary.
-    
+    publication record, teaching evaluations, or grant funding, which might legitimately affect salary.
+
     2. **Pre-existing Bias:** If bias affected earlier decisions (hiring, promotion), controlling for
+    rank might actually mask discrimination rather than isolate it.
+
+    3. **Causality:** Statistical associations don't necessarily imply causation. We can identify
+    patterns but can't definitively establish their causes.
+
        rank might actually mask discrimination rather than isolate it.
     
     3. **Causality:** Statistical associations do not necessarily imply causation. Although, we could identify
        patterns in this analysis, we can not definitively establish their causes.
     
     4. **Sample Size:** Particularly when filtering by field, small sample sizes may limit statistical power
-       and the reliability of estimates.
-    
+    and the reliability of estimates.
+
     ### Next Steps
-    
+
     For a comprehensive understanding of potential sex bias at this university, we should also examine:
+
+    1. Questions 2-4 in this analysis (starting salaries, salary increases, and promotion patterns)
+    2. Department-level patterns that might be obscured in aggregated analyses
+    3. Changes over time in salary determination practices
     
     1. Department-level patterns that might be obscured in aggregated analyses
     2. Changes over time in salary determination practices
     """
     )
-
 
 #  -----------------------------------------------------------------------------
 #  Question 2: Has Sex Bias Existed in Starting Salaries?
@@ -1159,13 +1228,13 @@ elif selected_tab == "1995 Sex Bias":
 elif selected_tab == "Starting Salaries":
     st.header("Question 2: Has Sex Bias Existed in Starting Salaries?")
     st.markdown(
-    """
+        """
     **Objective:**  
     Determine if there's evidence of sex bias in starting salaries and whether that has changed over the time 
     period represented in the dataset
     """
     )
-    
+
     # --- Section A: Data Preparation ---
     st.subheader("A) Data Preparation")
 
@@ -1180,34 +1249,39 @@ elif selected_tab == "Starting Salaries":
     )
 
     def prepare_starting_salary_data(df):
-        #Filter for only employees hired in the current year at the Assistant level (and also remove some other
-        #types of data that would mess with the analysis
-        df_yrhired = df[(df['startyr'] == df['year']) & (df['year'] >= df['yrdeg']) & (df['rank'] == 'Assist') & (df['deg'] != 'Other')]
+        # Filter for only employees hired in the current year at the Assistant level (and also remove some other
+        # types of data that would mess with the analysis
+        df_yrhired = df[
+            (df["startyr"] == df["year"])
+            & (df["year"] >= df["yrdeg"])
+            & (df["rank"] == "Assist")
+            & (df["deg"] != "Other")
+        ]
 
-        #avg_sal_male = avg_salary[avg_salary['sex'] == 'M'].copy()
-        #avg_sal_male.drop('sex', axis=1, inplace=True)
-        #avg_sal_male.rename(columns={'salary': 'avg_salary'}, inplace=True)
-        #df_yrhired = pd.merge(df_yrhired, avg_sal_male, on='year', how='left')
+        # avg_sal_male = avg_salary[avg_salary['sex'] == 'M'].copy()
+        # avg_sal_male.drop('sex', axis=1, inplace=True)
+        # avg_sal_male.rename(columns={'salary': 'avg_salary'}, inplace=True)
+        # df_yrhired = pd.merge(df_yrhired, avg_sal_male, on='year', how='left')
 
-        #New data columns for regression
-        #df_yrhired['salary_norm'] = df_yrhired['salary'] / df_yrhired['avg_salary']
-        df_yrhired['sex_bool'] = (df_yrhired['sex'] == 'F')
-        df_yrhired['yr_full'] = 1900 + df_yrhired['year']
-        df_yrhired['yr_adj_1975'] = df_yrhired['yr_full'] - 1975
-        df_yrhired['sex_year_1975'] = df_yrhired['sex_bool'] * df_yrhired['yr_adj_1975']
-        df_yrhired['yr_adj_1995'] = df_yrhired['yr_full'] - 1995
-        df_yrhired['sex_year_1995'] = df_yrhired['sex_bool'] * df_yrhired['yr_adj_1995']
-        df_yrhired['yrs_experience'] = df_yrhired['year'] - df_yrhired['yrdeg']
-        df_yrhired['field_arts'] = (df_yrhired['field'] == 'Arts')
-        df_yrhired['field_prof'] = (df_yrhired['field'] == 'Prof')
-        df_yrhired['deg_prof'] = (df_yrhired['deg'] == 'Prof')
+        # New data columns for regression
+        # df_yrhired['salary_norm'] = df_yrhired['salary'] / df_yrhired['avg_salary']
+        df_yrhired["sex_bool"] = df_yrhired["sex"] == "F"
+        df_yrhired["yr_full"] = 1900 + df_yrhired["year"]
+        df_yrhired["yr_adj_1975"] = df_yrhired["yr_full"] - 1975
+        df_yrhired["sex_year_1975"] = df_yrhired["sex_bool"] * df_yrhired["yr_adj_1975"]
+        df_yrhired["yr_adj_1995"] = df_yrhired["yr_full"] - 1995
+        df_yrhired["sex_year_1995"] = df_yrhired["sex_bool"] * df_yrhired["yr_adj_1995"]
+        df_yrhired["yrs_experience"] = df_yrhired["year"] - df_yrhired["yrdeg"]
+        df_yrhired["field_arts"] = df_yrhired["field"] == "Arts"
+        df_yrhired["field_prof"] = df_yrhired["field"] == "Prof"
+        df_yrhired["deg_prof"] = df_yrhired["deg"] == "Prof"
 
         return df_yrhired
 
     df_yrhired = prepare_starting_salary_data(data)
     if df_yrhired.empty:
         st.warning("No eligible records found. Check your dataset.")
-        st.stop() 
+        st.stop()
 
     # Add field filter
     st.markdown(
@@ -1228,27 +1302,29 @@ elif selected_tab == "Starting Salaries":
         ss_filtered = df_yrhired.copy()
 
     st.markdown(
-    """
+        """
     **Time Range Filter**
 
     Gender pay disparities may vary over time. Select the time period you want to analyze.
     """
     )
-        
+
     # Create a slider to select the range of years
     start_year, end_year = st.slider(
-    "Select the time range:",
-    min_value=int(ss_filtered['yr_full'].min()),
-    max_value=int(ss_filtered['yr_full'].max()),
-    value=(int(ss_filtered['yr_full'].min()), int(ss_filtered['yr_full'].max())),
-    step=1
+        "Select the time range:",
+        min_value=int(ss_filtered["yr_full"].min()),
+        max_value=int(ss_filtered["yr_full"].max()),
+        value=(int(ss_filtered["yr_full"].min()), int(ss_filtered["yr_full"].max())),
+        step=1,
     )
 
     # Filter the data based on the selected year range
-    ss_filtered_yr = ss_filtered[(ss_filtered['yr_full'] >= start_year) & (ss_filtered['yr_full'] <= end_year)]
+    ss_filtered_yr = ss_filtered[
+        (ss_filtered["yr_full"] >= start_year) & (ss_filtered["yr_full"] <= end_year)
+    ]
 
     st.info(
-    f"Showing analysis across {q2_selected_field} field(s) between {start_year} and {end_year} ({len(ss_filtered_yr)} faculty members)."
+        f"Showing analysis across {q2_selected_field} field(s) between {start_year} and {end_year} ({len(ss_filtered_yr)} faculty members)."
     )
 
     # --- Section B: Descriptive Statistics ---
@@ -1264,7 +1340,7 @@ elif selected_tab == "Starting Salaries":
     """
     )
 
-    #Boxplots of average starting salaries by gender over the whole time period
+    # Boxplots of average starting salaries by gender over the whole time period
     q2_box = px.box(
         ss_filtered_yr,
         x="sex",
@@ -1273,68 +1349,83 @@ elif selected_tab == "Starting Salaries":
         title=f"Starting Salary ({start_year}-{end_year}) by Sex",
         labels={"salary": "Starting Salary ($)", "sex": "Sex"},
     )
-    q2_box.update_layout(xaxis_title="Sex", yaxis_title="Starting Salary ($)",
-                         plot_bgcolor="#e5ecf6",
-                         paper_bgcolor="#e5ecf6")
-    q2_box.update_xaxes(showgrid=True, gridcolor='lightgray')
-    q2_box.update_yaxes(showgrid=True, gridcolor='lightgray')
+    q2_box.update_layout(
+        xaxis_title="Sex",
+        yaxis_title="Starting Salary ($)",
+        plot_bgcolor="#e5ecf6",
+        paper_bgcolor="#e5ecf6",
+    )
+    q2_box.update_xaxes(showgrid=True, gridcolor="lightgray")
+    q2_box.update_yaxes(showgrid=True, gridcolor="lightgray")
     if q2_box is None:
         st.warning("Not enough data for box plot.")
     else:
         st.plotly_chart(q2_box, use_container_width=True)
-        
-    #Line chart of average salary of professors by gender for the given year
-    avg_salary = ss_filtered_yr.groupby(['yr_full', 'sex'])['salary'].mean().reset_index()
-    
-    #Plot of average starting salaries by sex and year
+
+    # Line chart of average salary of professors by gender for the given year
+    avg_salary = (
+        ss_filtered_yr.groupby(["yr_full", "sex"])["salary"].mean().reset_index()
+    )
+
+    # Plot of average starting salaries by sex and year
     # Create the plot
     fig = px.line(
-        avg_salary, 
-        x='yr_full', 
-        y='salary', 
-        color='sex',
+        avg_salary,
+        x="yr_full",
+        y="salary",
+        color="sex",
         markers=True,
-        title='Average Starting Salary by Sex and Year'
+        title="Average Starting Salary by Sex and Year",
     )
 
     fig.update_layout(
-        xaxis_title='Year',
-        yaxis_title='Average Starting Salary',
-        template='plotly_white',  # Gives a clean look
-        legend_title_text='Sex',
-        width=800,                
+        xaxis_title="Year",
+        yaxis_title="Average Starting Salary",
+        template="plotly_white",  # Gives a clean look
+        legend_title_text="Sex",
+        width=800,
         height=600,
         plot_bgcolor="#e5ecf6",
-        paper_bgcolor="#e5ecf6"               
+        paper_bgcolor="#e5ecf6",
     )
-    fig.update_xaxes(showgrid=True, gridcolor='lightgray')
-    fig.update_yaxes(showgrid=True, gridcolor='lightgray')
+    fig.update_xaxes(showgrid=True, gridcolor="lightgray")
+    fig.update_yaxes(showgrid=True, gridcolor="lightgray")
 
     # If you want to ensure the x-axis only shows integer years:
     fig.update_xaxes(
-        tickmode='linear',
-        dtick=1  # Show every year if you want an annual tick
+        tickmode="linear", dtick=1  # Show every year if you want an annual tick
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
     # Normalize salaries by dividing them by average male starting salary in the current year
-    #Use these values to calculate unadjusted starting salary percentage gap
-    avg_sal_male = avg_salary[avg_salary['sex'] == 'M'].copy()
-    avg_sal_male.drop('sex', axis=1, inplace=True)
-    avg_sal_male.rename(columns={'salary': 'avg_salary'}, inplace=True)
-    ss_filtered_yr = pd.merge(ss_filtered_yr, avg_sal_male, on='yr_full', how='left')
-    ss_filtered_yr['salary_anom'] = ss_filtered_yr['salary'] - ss_filtered_yr['avg_salary']
-    ss_filtered_yr['salary_norm'] = ss_filtered_yr['salary'] / ss_filtered_yr['avg_salary']
-    gap = ss_filtered_yr[ss_filtered_yr['sex'] == 'M']['salary'].mean() - ss_filtered_yr[ss_filtered_yr['sex'] == 'F']['salary'].mean()
-    gap_percent = gap / ss_filtered_yr[ss_filtered_yr['sex'] == 'M']['salary'].mean() * 100
-    gap_yr = abs(ss_filtered_yr[ss_filtered_yr['sex'] == 'F']['salary_anom'].mean())
-    gap_percent_yr = (1-abs(ss_filtered_yr[ss_filtered_yr['sex'] == 'F']['salary_norm'].mean()))*100
+    # Use these values to calculate unadjusted starting salary percentage gap
+    avg_sal_male = avg_salary[avg_salary["sex"] == "M"].copy()
+    avg_sal_male.drop("sex", axis=1, inplace=True)
+    avg_sal_male.rename(columns={"salary": "avg_salary"}, inplace=True)
+    ss_filtered_yr = pd.merge(ss_filtered_yr, avg_sal_male, on="yr_full", how="left")
+    ss_filtered_yr["salary_anom"] = (
+        ss_filtered_yr["salary"] - ss_filtered_yr["avg_salary"]
+    )
+    ss_filtered_yr["salary_norm"] = (
+        ss_filtered_yr["salary"] / ss_filtered_yr["avg_salary"]
+    )
+    gap = (
+        ss_filtered_yr[ss_filtered_yr["sex"] == "M"]["salary"].mean()
+        - ss_filtered_yr[ss_filtered_yr["sex"] == "F"]["salary"].mean()
+    )
+    gap_percent = (
+        gap / ss_filtered_yr[ss_filtered_yr["sex"] == "M"]["salary"].mean() * 100
+    )
+    gap_yr = abs(ss_filtered_yr[ss_filtered_yr["sex"] == "F"]["salary_anom"].mean())
+    gap_percent_yr = (
+        1 - abs(ss_filtered_yr[ss_filtered_yr["sex"] == "F"]["salary_norm"].mean())
+    ) * 100
 
     st.write(
         f"**Unadjusted salary gap (M-F):** ${gap:.2f} per month ({gap_percent:.1f}% of male salary)"
     )
-    
+
     st.write(
         f"**Salary gap adjusted by year (M-F):** ${gap_yr:.2f} per month ({gap_percent_yr:.1f}% of male salary)"
     )
@@ -1351,7 +1442,7 @@ elif selected_tab == "Starting Salaries":
     st.subheader("C) Linear Regression Model for Starting Salaries by Sex")
 
     st.markdown(
-    """
+        """
     Raw salary differences don't tell the full story. To identify potential bias, we need to account for 
     other factors that may affect salary. Using multiple linear regression, we can estimate the effect of
     sex on starting salaries while controlling for field, degree, and administrative duties.
@@ -1364,21 +1455,21 @@ elif selected_tab == "Starting Salaries":
     **Variables in our model:**
     - **Outcome**: Normalized monthly salary
     - **Predictor of Interest**: Sex (sex_bool, female=1, male=0)
-    - **Control variables**: Field, years of experience (calculated as years since highest degree), degree
+    - **Control variables**: Field, years since highest degree, degree
         type, administrative duties
     """
     )
 
     st.markdown("**Select Model Features:**")
     possible_features = [
-        'sex_bool', 
-        'yrs_experience', 
-        'field_arts', 
-        'field_prof', 
-        'admin', 
-        'deg_prof'
+        "sex_bool",
+        "yrs_experience",
+        "field_arts",
+        "field_prof",
+        "admin",
+        "deg_prof",
     ]
-    
+
     default_feats = possible_features.copy()
     selected_features = st.multiselect(
         "Features to Include:", options=possible_features, default=default_feats
@@ -1388,24 +1479,23 @@ elif selected_tab == "Starting Salaries":
         st.warning("Please select at least one feature.")
         st.stop()
 
-
     pred = ss_filtered_yr[selected_features].astype(float)
-    outcome = ss_filtered_yr[['salary_norm']].astype(float)
+    outcome = ss_filtered_yr[["salary_norm"]].astype(float)
     pred_w_intercept = sm.add_constant(pred)
 
-    #Run regression
-    model = sm.OLS(outcome, pred_w_intercept).fit(cov_type='HC0')
+    # Run regression
+    model = sm.OLS(outcome, pred_w_intercept).fit(cov_type="HC0")
 
     # Create summary dataframe
     model_results = pd.DataFrame(
-    {
-        "Variable": model.params.index,
-        "Coefficient": model.params.values,
-        "Std Error": model.bse.values,
-        "p-value": model.pvalues.values,
-        "95% CI Lower": model.conf_int()[0],
-        "95% CI Upper": model.conf_int()[1],
-    }
+        {
+            "Variable": model.params.index,
+            "Coefficient": model.params.values,
+            "Std Error": model.bse.values,
+            "p-value": model.pvalues.values,
+            "95% CI Lower": model.conf_int()[0],
+            "95% CI Upper": model.conf_int()[1],
+        }
     )
 
     # Format numeric columns
@@ -1422,8 +1512,44 @@ elif selected_tab == "Starting Salaries":
     st.markdown("**Starting Salary Model Results**")
     st.dataframe(model_results)
     
+    # Interpret the female coefficient
+    female_coef_q2 = model.params["sex_bool"]
+    female_pval_q2 = model.pvalues["sex_bool"]
+    percent_effect_q2 = female_coef_q2 * 100
+    female_ci_lower_q2 = model.conf_int().loc["sex_bool"][0]
+    female_ci_upper_q2 = model.conf_int().loc["sex_bool"][1]
+    percent_ci_lower_q2 = female_ci_lower_q2 * 100
+    percent_ci_upper_q2 = female_ci_upper_q2 * 100
+    
+    if female_pval_q2 < 0.05:
+        if percent_effect_q2 < 0:
+            effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, women's starting salaries are approximately {abs(percent_effect_q2):.1f}% less than similarly qualified men (95% CI: {percent_ci_lower_q2:.1f}% to {percent_ci_upper_q2:.1f}%, p={female_pval_q2:.4f})."
+            st.info(effect_interpretation_q2)
+            st.markdown(
+                """
+            **This statistically significant difference suggests potential sex bias in starting salaries.**
+            
+            Since we've controlled for legitimate factors affecting starting salaries, the remaining difference 
+            attributable to sex raises concerns about systematic bias.
+            """
+            )
+        else:
+            effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, women's starting salaries are approximately {abs(percent_effect_q2):.1f}% more than similarly qualified men (95% CI: {percent_ci_lower_q2:.1f}% to {percent_ci_upper_q2:.1f}%, p={female_pval_q2:.4f})."
+            st.success(effect_interpretation_q2)
+    else:
+        effect_interpretation_q2 = f"After controlling for rank, field, experience, degree, and administrative duties, there is no statistically significant difference in starting salaries between men and women (p={female_pval_q2:.4f})."
+        st.info(effect_interpretation_q2)
+        st.markdown(
+            """
+        **The absence of a significant difference suggests that the raw gap in starting salaries may be explained by legitimate factors.**
+        
+        This doesn't rule out other forms of bias (such as in hiring or promotion), but suggests that 
+        men and women with similar qualifications receive similar starting salaries.
+        """
+        )
+
     st.markdown(
-    """
+        """
     **Key Assumptions:**
     - Linear relationships between predictors and salary increases.
     - Independence of observations.
@@ -1435,13 +1561,13 @@ elif selected_tab == "Starting Salaries":
       gender on salary increases after controlling for other factors. This variable is 1 for female faculty
       members and 0 for male faculty.
     """
-    ) 
+    )
 
     # --- Section D: Change Over Time Model with Interaction Term ---
     st.subheader("D) Linear Regression Model for Change Over Time ")
 
     st.markdown(
-    """
+        """
     How has the sex disparity in starting salaries changed over the years? Has it improved over time? To 
     answer these questions, we ran another regression model with a Sex x Time interaction term. This tells
     
@@ -1455,16 +1581,16 @@ elif selected_tab == "Starting Salaries":
     )
     st.markdown("**Select Model Features:**")
     int_possible_features = [
-        'sex_bool', 
-        'yr_adj_1975',
-        'sex_year_1975',
-        'yrs_experience', 
-        'field_arts', 
-        'field_prof', 
-        'admin', 
-        'deg_prof'
+        "sex_bool",
+        "yr_adj_1975",
+        "sex_year_1975",
+        "yrs_experience",
+        "field_arts",
+        "field_prof",
+        "admin",
+        "deg_prof",
     ]
-    
+
     int_default_feats = int_possible_features.copy()
     int_selected_features = st.multiselect(
         "Features to Include:", options=int_possible_features, default=int_default_feats
@@ -1474,24 +1600,23 @@ elif selected_tab == "Starting Salaries":
         st.warning("Please select at least one feature.")
         st.stop()
 
-
     int_pred = ss_filtered_yr[int_selected_features].astype(float)
-    int_outcome = ss_filtered_yr[['salary_norm']].astype(float)
+    int_outcome = ss_filtered_yr[["salary_norm"]].astype(float)
     int_pred_w_intercept = sm.add_constant(int_pred)
 
-    #Run regression
-    int_model = sm.OLS(int_outcome, int_pred_w_intercept).fit(cov_type='HC0')
+    # Run regression
+    int_model = sm.OLS(int_outcome, int_pred_w_intercept).fit(cov_type="HC0")
 
     # Create summary dataframe
     int_model_results = pd.DataFrame(
-    {
-        "Variable": int_model.params.index,
-        "Coefficient": int_model.params.values,
-        "Std Error": int_model.bse.values,
-        "p-value": int_model.pvalues.values,
-        "95% CI Lower": int_model.conf_int()[0],
-        "95% CI Upper": int_model.conf_int()[1],
-    }
+        {
+            "Variable": int_model.params.index,
+            "Coefficient": int_model.params.values,
+            "Std Error": int_model.bse.values,
+            "p-value": int_model.pvalues.values,
+            "95% CI Lower": int_model.conf_int()[0],
+            "95% CI Upper": int_model.conf_int()[1],
+        }
     )
 
     # Format numeric columns
@@ -1508,8 +1633,38 @@ elif selected_tab == "Starting Salaries":
     st.markdown("**Model Results**")
     st.dataframe(int_model_results)
     
+       # Interpret the time coefficient
+    time_coef_q2_int = int_model.params["sex_year_1975"]
+    time_pval_q2_int = int_model.pvalues["sex_year_1975"]
+    percent_effect_q2_int = time_coef_q2_int * 100
+    time_ci_lower_q2_int = int_model.conf_int().loc["sex_year_1975"][0]
+    time_ci_upper_q2_int = int_model.conf_int().loc["sex_year_1975"][1]
+    percent_ci_lower_q2_int = time_ci_lower_q2_int * 100
+    percent_ci_upper_q2_int = time_ci_upper_q2_int * 100
     
-        # --- Section E: Conclusion ---
+    if time_pval_q2_int < 0.05:
+        if percent_effect_q2_int < 0:
+            effect_interpretation_q2_int = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties, is widening by approximately {abs(percent_effect_q2_int):.1f}% percent per year (95% CI: {percent_ci_lower_q2_int:.1f}% to {percent_ci_upper_q2_int:.1f}%, p={time_pval_q2_int:.4f})."
+            st.info(effect_interpretation_q2_int)
+            st.markdown(
+                """
+            **This statistically significant difference suggests sex bias in starting salaries may be improving over time.**
+
+            """
+            )
+        else:
+            effect_interpretation_q2_int = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties, is narrowing by approximately {abs(percent_effect_q2_int):.1f}%  (95% CI: {percent_ci_lower_q2_int:.1f}% to {percent_ci_upper_q2_int:.1f}%, p={time_pval_q2_int:.4f})."
+            st.success(effect_interpretation_q2_int)
+    else:
+        effect_interpretation_q2 = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties is not significantly changing over time (p={time_pval_q2_int:.4f})."
+        st.info(effect_interpretation_q2)
+        st.markdown(
+            """
+        **The absence of a significant difference suggests that either sex bias in starting salaries has remained steady over time, or our statistical methods do not allow us to discern a trend over time in sex bias for starting salaries.**
+        """
+        )
+
+    # --- Section E: Conclusion ---
     st.subheader("E) Conclusion and Limitations")
 
     st.markdown(
@@ -1550,7 +1705,7 @@ elif selected_tab == "Starting Salaries":
 # -------------------------------------------------------------------------------
 # Question 3: Has Sex Bias Existed in Salary Increases (1990-1995)
 # -------------------------------------------------------------------------------
-    
+
 elif selected_tab == "Salary Increases (1990-1995)":
     st.header("Question 3: Has Sex Bias Existed in Salary Increases (1990-1995)?")
     st.markdown(
@@ -1707,8 +1862,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
              **Observation:**
             - Slight positive linear relationship visible.
             """
-
-
             )
 
     col1, col2 = st.columns(2)
@@ -1745,9 +1898,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
             """
             )
 
-
-
-
     # --- Section E: Advanced Linear Regression Model ---
     st.subheader("F) Linear Regression Models for Salary Increases")
 
@@ -1781,7 +1931,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
     # Interaction Term Selection
     st.markdown("**Select Interaction Terms:** *(Optional)*")
     possible_interactions = [
-
         ("is_female", "salary_1990"),
         ("is_female", "field_Other"),
         ("is_female", "field_Prof"),
@@ -1790,7 +1939,7 @@ elif selected_tab == "Salary Increases (1990-1995)":
         ("is_female", "rank_1990_Assoc"),
         ("is_female", "rank_1995_Assoc"),
         ("is_female", "rank_1995_Full"),
-        ("is_female", "startyr")
+        ("is_female", "startyr"),
     ]
     selected_interactions = st.multiselect(
         "Interaction Terms to Include:", options=possible_interactions, default=[]
@@ -1808,7 +1957,9 @@ elif selected_tab == "Salary Increases (1990-1995)":
     X_all, y_all, _ = sba.prepare_data_for_modeling(summary_field, target=target_col)
 
     # Fit Model with Interactions
-    model = sba.build_and_run_salary_model_with_interactions(X_all, y_all, selected_features, selected_interactions)
+    model = sba.build_and_run_salary_model_with_interactions(
+        X_all, y_all, selected_features, selected_interactions
+    )
 
     # Extract Model Performance Metrics
     r_squared = model.rsquared
@@ -1841,7 +1992,9 @@ elif selected_tab == "Salary Increases (1990-1995)":
 
     # Add Significance Indicator
     model_results["Significance"] = model_results["p-value"].apply(
-        lambda p: "***" if p < 0.001 else ("**" if p < 0.01 else ("*" if p < 0.05 else "ns"))
+        lambda p: (
+            "***" if p < 0.001 else ("**" if p < 0.01 else ("*" if p < 0.05 else "ns"))
+        )
     )
 
     st.markdown("**Salary Increase Model Results**")
@@ -1875,7 +2028,6 @@ elif selected_tab == "Salary Increases (1990-1995)":
         it means the gender effect on salary increases is **different** for different ranks.
         """
     )
-
 
     # --- Section F: Comprehensive Analysis ---
     st.subheader("F) Comprehensive Analysis & Conclusion")
@@ -1946,7 +2098,9 @@ elif selected_tab == "Promotions (Associate to Full)":
         st.stop()
 
     # Field filter
-    st.info("Select a field to view it's promotion data, perform hypothesis tests, and perform survival analysis.")
+    st.info(
+        "Select a field to view it's promotion data, perform hypothesis tests, and perform survival analysis."
+    )
     field_list = ["All"] + sorted(summary["field"].dropna().unique().tolist())
     selected_field = st.selectbox("Field Filter", field_list, index=0)
 
@@ -1972,7 +2126,6 @@ elif selected_tab == "Promotions (Associate to Full)":
     """
     )
 
-
     st.subheader("Promotion Counts by Sex")
     bar_fig = pa.create_promotion_bar_chart(summary_field)
     if bar_fig is None:
@@ -1989,11 +2142,11 @@ elif selected_tab == "Promotions (Associate to Full)":
     else:
         st.info("Could not compute cross-tab; possibly only one sex present.")
 
-# --------------------------------------------------------------------
-# SECTION C: Two-Proportion Z-Test
-# --------------------------------------------------------------------
+    # --------------------------------------------------------------------
+    # SECTION C: Two-Proportion Z-Test
+    # --------------------------------------------------------------------
     st.markdown("### C) Statistical Test of Promotion Rates")
-    st.subheader("Two-Proportion Z-Test for Promotion Rates, at Significance Level = 0.05 and a 95% Confidence Interval (CI)")
+    st.subheader("Two-Proportion Z-Test for Promotion Rates, at Significance Level = 0.05")
     st.markdown(
         """
     **Hypotheses**  
@@ -2006,9 +2159,7 @@ elif selected_tab == "Promotions (Associate to Full)":
     )
 
     if ztest_output is None:
-        st.info(
-            "Not enough data to run a two-proportion z-test (need both M and F)."
-        )
+        st.info("Not enough data to run a two-proportion z-test (need both M and F).")
     else:
         test_result, _ = ztest_output
         result = {
@@ -2065,7 +2216,9 @@ elif selected_tab == "Promotions (Associate to Full)":
 
     surv_fig = pa.create_survival_analysis(summary_field)
     if surv_fig is None:
-        st.warning("Not enough data or only one sex group available for Kaplan-Meier analysis.")
+        st.warning(
+            "Not enough data or only one sex group available for Kaplan-Meier analysis."
+        )
     else:
         st.plotly_chart(surv_fig, use_container_width=True)
 
@@ -2215,7 +2368,10 @@ elif selected_tab == "Summary of Findings":
     # ----------------------------------------------------------------------------
     # Question 2: Starting Salaries
     # ----------------------------------------------------------------------------
-    st.subheader("Are starting salaries different between male and female faculty?", divider="violet")
+    st.subheader(
+        "Are starting salaries different between male and female faculty?",
+        divider="violet",
+    )
     st.markdown(
         """
     **Key Observations**  
@@ -2235,7 +2391,10 @@ elif selected_tab == "Summary of Findings":
     # ----------------------------------------------------------------------------
     # Question 3: Salary Increases (1990–1995)
     # ----------------------------------------------------------------------------
-    st.subheader("Have salary increases between 1990 and 1995 been influenced by sex?", divider="violet")
+    st.subheader(
+        "Have salary increases between 1990 and 1995 been influenced by sex?",
+        divider="violet",
+    )
     st.markdown(
         """
     **Key Observations**  
@@ -2255,7 +2414,10 @@ elif selected_tab == "Summary of Findings":
     # ----------------------------------------------------------------------------
     # Question 4: Promotions (Associate to Full)
     # ----------------------------------------------------------------------------
-    st.subheader("Has sex bias existed in granting promotions from Associate to Full Professor?", divider="violet")
+    st.subheader(
+        "Has sex bias existed in granting promotions from Associate to Full Professor?",
+        divider="violet",
+    )
     st.markdown(
         """
     **Key Observations**  
