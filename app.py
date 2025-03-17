@@ -1652,7 +1652,7 @@ elif selected_tab == "Starting Salaries":
         st.info(effect_interpretation_q2)
         st.markdown(
             """
-        **The absence of a significant difference suggests that either sex bias in starting salaries has remained steady over time, or our statistical methods do not allow us to discern a trend over time in sex bias for starting salaries.
+        **The absence of a significant difference suggests that either sex bias in starting salaries has remained steady over time, or our statistical methods do not allow us to discern a trend over time in sex bias for starting salaries.**
         """
         )
 
