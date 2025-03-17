@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 
 # Two-proportion z-test
 from statsmodels.stats.proportion import proportions_ztest
+import statsmodels.api as sm
 
 # Survival analysis
 from sksurv.nonparametric import kaplan_meier_estimator
