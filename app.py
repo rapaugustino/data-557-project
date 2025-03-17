@@ -1476,7 +1476,7 @@ elif selected_tab == "Starting Salaries":
     pred_w_intercept = sm.add_constant(pred)
 
     # Run regression
-    model = sm.OLS(outcome, pred_w_intercept).fit(cov_type="HC0")
+    model = sm.OLS(outcome, pred_w_intercept).fit()
 
     # Create summary dataframe
     model_results = pd.DataFrame(
@@ -1544,11 +1544,11 @@ elif selected_tab == "Starting Salaries":
         """
     **Key Assumptions:**
     - Linear relationships between predictors and salary increases.
+    - Homoscedasticity (constant variance of residuals).
     - Independence of observations.
     - Normally distributed residuals.
     
     **Notes:** 
-    - We used robust standard errors, so homoscedasticity (constant variance of residuals) is not assumed.
     - The coefficient for 'sex_bool' is particularly important as it represents the estimated effect of 
       gender on salary increases after controlling for other factors. This variable is 1 for female faculty
       members and 0 for male faculty.
@@ -1597,7 +1597,7 @@ elif selected_tab == "Starting Salaries":
     int_pred_w_intercept = sm.add_constant(int_pred)
 
     # Run regression
-    int_model = sm.OLS(int_outcome, int_pred_w_intercept).fit(cov_type="HC0")
+    int_model = sm.OLS(int_outcome, int_pred_w_intercept).fit()
 
     # Create summary dataframe
     int_model_results = pd.DataFrame(
