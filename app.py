@@ -1507,11 +1507,11 @@ elif selected_tab == "Starting Salaries":
     # Interpret the female coefficient
     female_coef_q2 = model.params["sex_bool"]
     female_pval_q2 = model.pvalues["sex_bool"]
-    percent_effect_q2 = (female_coef_q2 - 1) * 100
+    percent_effect_q2 = female_coef_q2 * 100
     female_ci_lower_q2 = model.conf_int().loc["sex_bool"][0]
     female_ci_upper_q2 = model.conf_int().loc["sex_bool"][1]
-    percent_ci_lower_q2 = (female_ci_lower_q2 - 1) * 100
-    percent_ci_upper_q2 = (female_ci_upper_q2 - 1) * 100
+    percent_ci_lower_q2 = female_ci_lower_q2 * 100
+    percent_ci_upper_q2 = female_ci_upper_q2 * 100
     
     if female_pval_q2 < 0.05:
         if percent_effect_q2 < 0:
@@ -1628,11 +1628,11 @@ elif selected_tab == "Starting Salaries":
        # Interpret the time coefficient
     time_coef_q2_int = int_model.params["sex_year_1975"]
     time_pval_q2_int = int_model.pvalues["sex_year_1975"]
-    percent_effect_q2_int = (time_coef_q2_int - 1) * 100
+    percent_effect_q2_int = time_coef_q2_int * 100
     time_ci_lower_q2_int = int_model.conf_int().loc["sex_year_1975"][0]
     time_ci_upper_q2_int = int_model.conf_int().loc["sex_year_1975"][1]
-    percent_ci_lower_q2_int = (time_ci_lower_q2_int - 1) * 100
-    percent_ci_upper_q2_int = (time_ci_upper_q2_int - 1) * 100
+    percent_ci_lower_q2_int = time_ci_lower_q2_int - 1 * 100
+    percent_ci_upper_q2_int = time_ci_upper_q2_int - 1 * 100
     
     if female_pval_q2 < 0.05:
         if percent_effect_q2 < 0:
