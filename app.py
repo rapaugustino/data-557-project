@@ -1648,7 +1648,7 @@ elif selected_tab == "Starting Salaries":
             effect_interpretation_q2_int = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties, is narrowing by approximately {abs(percent_effect_q2_int):.1f}%  (95% CI: {percent_ci_lower_q2_int:.1f}% to {percent_ci_upper_q2_int:.1f}%, p={time_pval_q2_int:.4f})."
             st.success(effect_interpretation_q2_int)
     else:
-        effect_interpretation_q2 = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties is not significantly changing over time (p={time_pval_q2:.4f})."
+        effect_interpretation_q2 = f"The gap between men's and women's starting salaries after controlling for rank, field, experience, degree, and administrative duties is not significantly changing over time (p={time_pval_q2_int:.4f})."
         st.info(effect_interpretation_q2)
         st.markdown(
             """
